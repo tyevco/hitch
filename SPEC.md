@@ -17,8 +17,8 @@ Unchecked for trademark or package collisions; nothing was fetched.
 
 | Name | Why |
 |---|---|
-| **Hitch** ✅ recommended | It says "connect many things to one backend". No farm pun, so it stays clearly separate from Haystack and herdr. |
-| Hitch | Short and good on a CLI (`hitch ls`). It sits in the hay and herd theme, so it reads as Haystack-owned. |
+| **Hitch** ✅ chosen by Tyler (2026-11-24) | Short and good on a CLI (`hitch ls`). It sits in the hay and herd theme beside Haystack and Herdquarters. |
+| Patchbay | The draft's first pick: "connect many things to one backend", with no farm pun. |
 | Switchyard | Good "routing" image, but long, and it suggests the event-log design. |
 | Gatepost | Leads with decisions and gates, but undersells events and sessions. |
 | Crossbar | Neutral and technical. Some router and WAMP projects already use the word. |
