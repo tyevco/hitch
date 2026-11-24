@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hitch.dev/types/watch.deploy@1.schema.json",
+  "title": "watch.deploy@1 (decision kind, floor confirm, safety deploy): bound args",
+  "description": "Approve a GitHub Actions run held at a deployment approval (inventory K2); rejecting it is the decline. Preview rows, in order: Repo, Run, Started by, Where. Options: approve 'Approve the run' (confirm), decline 'Reject the run' (narrow).",
+  "type": "object",
+  "required": [
+    "repo",
+    "run"
+  ],
+  "properties": {
+    "repo": {
+      "type": "string",
+      "maxLength": 200
+    },
+    "run": {
+      "type": "string",
+      "maxLength": 40
+    },
+    "by": {
+      "type": "string",
+      "maxLength": 80
+    },
+    "where": {
+      "type": "string",
+      "maxLength": 300
+    },
+    "v2": {
+      "$ref": "hitch.defs.schema.json#/$defs/v2bridge"
+    }
+  },
+  "additionalProperties": false
+}

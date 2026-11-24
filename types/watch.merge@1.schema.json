@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hitch.dev/types/watch.merge@1.schema.json",
+  "title": "watch.merge@1 (decision kind, floor confirm, safety merge): bound args",
+  "description": "Merge a pull request (inventory K1, W1). The head commit is bound: a push after the ask is a different decision, and the executor re-checks it at claim. Preview rows, in order: Pull request, Head, How. Options: merge 'Merge' (confirm), decline 'Not now' (narrow).",
+  "type": "object",
+  "required": [
+    "pr"
+  ],
+  "properties": {
+    "pr": {
+      "type": "string",
+      "maxLength": 300
+    },
+    "sha": {
+      "type": "string",
+      "maxLength": 64
+    },
+    "method": {
+      "type": "string",
+      "maxLength": 40
+    },
+    "v2": {
+      "$ref": "hitch.defs.schema.json#/$defs/v2bridge"
+    }
+  },
+  "additionalProperties": false
+}
