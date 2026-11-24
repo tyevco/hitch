@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hitch.dev/types/kernel.answers.receive@1.schema.json",
+  "title": "kernel.answers.receive@1 (decision kind, floor local, safety grant): bound args",
+  "description": "Let this session receive typed answers from your Hitch clients (inventory K20, Haystack P5). A Claude session's mod pairs with the node for one channel only: the service delivering into that session's vouched queue an answer the person typed and a Hitch client already decided (queue.question@1's answer, HAYSTACK-SEAMS A1). It replaces v2's mod pairing Allowed on the Dashboard (read-only from P5) for this use alone. NORMATIVE: a pairing made by this kind is never a person principal. The node's isUser is false for it; its key can't sign a person's request (USER_SIG), an answer MAC or any /hitch/v1 answer (not_a_client); it opens no channel but the vouched answer queue. Only a mod that declares the answers.receive capability may ask (today the Inbox mod); the node refuses any other at request. Bound to the session's key fingerprint (`keyFp`, sha256 of the X25519 public key it sent), the `mod` and `session`, the `code` that session shows, and the `scope`. A safety kind: no grant answers it and no always-allow. Expires with the ask (`expires`, onExpire withdraw). Preview rows: Mod, Session, Project, Code, Key, What it allows ('typed answers from your Hitch clients will reach this machine's Claude session'). Options: approve 'Allow' (local, presence), decline 'Deny' (narrow).",
+  "type": "object",
+  "required": [
+    "mod",
+    "session",
+    "keyFp",
+    "code",
+    "scope"
+  ],
+  "properties": {
+    "mod": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]{0,63}$"
+    },
+    "session": {
+      "type": "string",
+      "maxLength": 120
+    },
+    "project": {
+      "type": "string",
+      "maxLength": 200
+    },
+    "keyFp": {
+      "$ref": "hitch.defs.schema.json#/$defs/hash"
+    },
+    "code": {
+      "type": "string",
+      "pattern": "^[0-9]{6}$"
+    },
+    "scope": {
+      "enum": [
+        "answers.receive"
+      ]
+    },
+    "v2": {
+      "$ref": "hitch.defs.schema.json#/$defs/v2bridge"
+    }
+  },
+  "additionalProperties": false
+}

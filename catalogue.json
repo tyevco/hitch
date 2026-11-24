@@ -448,6 +448,13 @@
       "owner": "watch",
       "privacy": "meta",
       "item": true
+    },
+    "kernel.answers.receive@1": {
+      "owner": "kernel",
+      "privacy": "meta",
+      "decision": true,
+      "floor": "local",
+      "safety": "grant"
     }
   },
   "patterns": {

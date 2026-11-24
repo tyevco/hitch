@@ -169,6 +169,7 @@ In Hitch, a typed slash command in a session is **not** an answer. It points at 
 | K17 | Claim a queued mod action (an outbox send gets a ticket) | `routes/actions.mjs:17-45`, `kernel/tickets.mjs` | the executor claims with a **kernel-minted credential**; a hello token never claims (seam 5) | — |
 | K18 | A paired session decides pairings | `routes/registry.mjs:67` | **removed**: `not_a_client` | — |
 | K19 | Hub approve or staged release with a paired signature | `routes/hub.mjs:336,345` | `kernel.hub.release@1` | confirm |
+| K20 | A session pairs to receive typed answers (the /inbox pane's press, Allowed on the Dashboard; Haystack P5) | `kernel/pairing.mjs` ask, `inbox.mjs` pair item | **new** `kernel.answers.receive@1`, scope answers.receive, bound to the key fingerprint, mod, session and code; never a person principal; expires with the ask | local (safety grant) |
 
 ### haystack-kernel hooks (typed commands and in-session dialogs, signed as the person)
 
