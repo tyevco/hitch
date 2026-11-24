@@ -78,6 +78,9 @@ export function createNode({ store = createStore(), clock = { now: () => Date.no
     const floor = inherit?.floor ?? (out ? out.floor : cat?.floor === 'vendor' || !cat ? 'local' : cat.floor);
     // verbFloors: verbs that run no side effect may sit below the kind's floor
     // (default: decline is narrow). Every other verb gets at least the floor.
+    // A decision that leaves the machine never offers "always allow": the node
+    // strips it rather than trusting the requester.
+    if (out && options && !bugs.keepAllowOnReach) options = options.filter((o) => o.verb !== 'approveAllow');
     const vf = { decline: 'narrow', ...(cat?.verbFloors ?? {}) };
     options = (options ?? [{ verb: 'approve', label: 'Approve' }, { verb: 'decline', label: 'Decline' }]).map((o) => {
       const base = vf[o.verb] ?? floor;

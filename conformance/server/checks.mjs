@@ -392,6 +392,9 @@ export const CHECKS = [
       const dq = (await g.decision(quiet)).body;
       assert.equal(dq.safety, 'send', 'the node derives reaching out from the recipient: a requester that omits the flag cannot lower it');
       refused(await g.answer(quiet, 'approve', { decision: dq }), 'scope', 'grant on an unflagged remote send:');
+      const offered = await adapter.requestDecision({ kind: 'parley.send@1', args: { to: 'aid:remote1', text: { content: 'sha256:' + '0'.repeat(64), bytes: 0 } },
+        options: [{ verb: 'approve', label: 'Send' }, { verb: 'approveAllow', label: 'Send and always allow', tier: 'local' }, { verb: 'decline' }] });
+      assert.ok(!(await g.decision(offered)).body.options.some((o) => o.verb === 'approveAllow'), 'the node strips "always allow" from a send that leaves the machine');
     } },
 
   // ---- pairing ------------------------------------------------------------------------
