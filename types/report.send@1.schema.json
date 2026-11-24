@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hitch.dev/types/report.send@1.schema.json",
+  "title": "report.send@1 (decision kind, floor confirm, safety send): bound args",
+  "description": "Send the Weekly Status Report. Preview rows, in order: To, Cc (optional), Subject, Week, Body {digest, ref, bytes}. Options: approve 'Send' (confirm), sendBack needsText (decide), decline (narrow).",
+  "type": "object",
+  "required": ["week", "to", "subject", "body"],
+  "properties": {
+    "week": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$", "description": "ISO date of the week's Monday" },
+    "to": { "type": "array", "minItems": 1, "items": { "type": "string", "maxLength": 320 } },
+    "cc": { "type": "array", "items": { "type": "string", "maxLength": 320 } },
+    "subject": { "type": "string", "maxLength": 300 },
+    "body": { "$ref": "hitch.defs.schema.json#/$defs/ref" }
+  },
+  "additionalProperties": false
+}

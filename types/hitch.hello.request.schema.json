@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hitch.dev/types/hitch.hello.request.schema.json",
+  "title": "POST /hitch/v1/hello request",
+  "type": "object",
+  "required": ["proto", "client"],
+  "properties": {
+    "proto": { "const": "hitch/1" },
+    "client": { "type": "object", "required": ["name", "version"], "properties": { "name": { "type": "string", "maxLength": 80 }, "version": { "type": "string", "maxLength": 40 } } },
+    "caps": { "type": "array", "items": { "type": "string" } },
+    "renders": { "type": "array", "items": { "$ref": "hitch.defs.schema.json#/$defs/typeName" }, "description": "Decision kinds this client renders with kind-specific UI. Everything else it renders generically." }
+  }
+}

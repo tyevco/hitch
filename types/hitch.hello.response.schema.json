@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hitch.dev/types/hitch.hello.response.schema.json",
+  "title": "POST /hitch/v1/hello response",
+  "type": "object",
+  "required": ["spec", "aid", "principal", "caps"],
+  "properties": {
+    "spec": { "$ref": "hitch.defs.schema.json#/$defs/spec" },
+    "aid": { "$ref": "hitch.defs.schema.json#/$defs/aid" },
+    "principal": { "$ref": "hitch.defs.schema.json#/$defs/principal", "description": "As the node sees the caller, from its credential." },
+    "ceiling": { "$ref": "hitch.defs.schema.json#/$defs/tier", "description": "Clients only: the highest tier this client may answer on this transport (after the clamp)." },
+    "scopes": { "type": "array", "items": { "type": "string" } },
+    "privacy": { "$ref": "hitch.defs.schema.json#/$defs/privacy", "description": "Clients only: the highest privacy class this client may read." },
+    "caps": { "type": "array", "items": { "type": "string" } },
+    "cursor": { "$ref": "hitch.defs.schema.json#/$defs/seq" }
+  }
+}

@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hitch.dev/types/hitch.client.pair@1.schema.json",
+  "title": "hitch.client.pair@1 (decision kind, floor local)",
+  "type": "object",
+  "required": [
+    "pairing",
+    "name",
+    "sas",
+    "suite",
+    "scopes",
+    "ceiling"
+  ],
+  "properties": {
+    "pairing": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "sas": {
+      "type": "string",
+      "pattern": "^[0-9]{6}$"
+    },
+    "suite": {
+      "$ref": "hitch.defs.schema.json#/$defs/suite"
+    },
+    "scopes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "ceiling": {
+      "$ref": "hitch.defs.schema.json#/$defs/tier"
+    },
+    "presence": {
+      "type": "array",
+      "description": "The presence keys from the pairing request, bound: approving the pair approves exactly these keys. key = sha256 of JCS(pub).",
+      "items": {
+        "type": "object",
+        "required": [
+          "kid",
+          "suite",
+          "key"
+        ],
+        "properties": {
+          "kid": {
+            "type": "string"
+          },
+          "suite": {
+            "$ref": "hitch.defs.schema.json#/$defs/presenceSuite"
+          },
+          "key": {
+            "$ref": "hitch.defs.schema.json#/$defs/hash"
+          }
+        }
+      }
+    }
+  }
+}

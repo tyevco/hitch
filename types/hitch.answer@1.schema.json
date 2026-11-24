@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hitch.dev/types/hitch.answer@1.schema.json",
+  "title": "hitch.answer@1",
+  "description": "POST /hitch/v1/decisions/:id/answers body (bare), and the data of hitch.answer@1 events. Carries only the verb, never args.",
+  "type": "object",
+  "required": ["decisionId", "aid", "verb", "rev", "bindHash", "shownHash", "iat", "exp", "nonce"],
+  "properties": {
+    "decisionId": { "type": "string", "pattern": "^dec_[0-9A-HJKMNP-TV-Z]{26}$" },
+    "aid": { "$ref": "hitch.defs.schema.json#/$defs/aid" },
+    "verb": { "type": "string", "pattern": "^[a-z][A-Za-z0-9]*$" },
+    "rev": { "type": "integer", "minimum": 1 },
+    "bindHash": { "$ref": "hitch.defs.schema.json#/$defs/hash" },
+    "shownHash": { "$ref": "hitch.defs.schema.json#/$defs/hash" },
+    "text": { "type": "string", "maxLength": 8000 },
+    "iat": { "$ref": "hitch.defs.schema.json#/$defs/unix" },
+    "exp": { "$ref": "hitch.defs.schema.json#/$defs/unix" },
+    "nonce": { "type": "string", "minLength": 16, "maxLength": 64, "pattern": "^[A-Za-z0-9_-]+$" },
+    "presence": { "$ref": "hitch.defs.schema.json#/$defs/presence" }
+  },
+  "additionalProperties": false
+}

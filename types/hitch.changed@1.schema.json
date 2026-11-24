@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hitch.dev/types/hitch.changed@1.schema.json",
+  "title": "hitch.changed@1",
+  "description": "Change notice. privacy public. The client GETs the resource to see it.",
+  "type": "object",
+  "required": ["resource", "id", "rev", "op"],
+  "properties": {
+    "resource": { "enum": ["decisions", "items", "sessions", "messages", "clients", "grants", "feeds"] },
+    "id": { "type": "string" },
+    "rev": { "type": "integer", "minimum": 0 },
+    "op": { "enum": ["create", "update", "delete"] },
+    "state": { "type": "string" }
+  },
+  "additionalProperties": false
+}

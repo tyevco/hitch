@@ -1,0 +1,24 @@
+{
+  "spec": "hitch/1",
+  "description": "Closed refusal codes. The HTTP status is fixed per code. A client branches on code, never on message.",
+  "codes": {
+    "unauthenticated":  { "status": 401, "means": "No credential, a bad signature, or a nonce/iat outside the window." },
+    "revoked":          { "status": 401, "means": "The client or grant was revoked." },
+    "step_up_required": { "status": 401, "means": "confirm and local answers need a presence proof." },
+    "not_a_client":     { "status": 403, "means": "A mod, app, session, hub or peer credential tried to answer." },
+    "tier":             { "status": 403, "means": "The option's tier is above the client's ceiling on this transport." },
+    "scope":            { "status": 403, "means": "The credential's scopes do not cover this resource or kind." },
+    "privacy":          { "status": 403, "means": "The content's privacy class is above the client's." },
+    "suite":            { "status": 403, "means": "The client's signature suite cannot reach this tier (hmac-sha256 is capped at decide)." },
+    "gone":             { "status": 410, "means": "Route or resource retired or erased." },
+    "withdrawn":        { "status": 410, "means": "The requester withdrew the decision." },
+    "expired":          { "status": 410, "means": "The decision expired; nothing was approved." },
+    "gap":              { "status": 410, "means": "The cursor is older than retention. Re-list resync, then resume from the lists cursor." },
+    "stale":            { "status": 409, "means": "rev, bindHash or shownHash is not current. Re-fetch and show again." },
+    "already":          { "status": 409, "means": "Another answer won. winner says who and where." },
+    "replay":           { "status": 409, "means": "Nonce reused, or the answer names another node's aid." },
+    "unknown_type":     { "status": 422, "means": "Unknown or undeclared type/kind for this publisher." },
+    "invalid":          { "status": 422, "means": "Body fails its schema, or the verb is not offered." },
+    "rate":             { "status": 429, "means": "Rate limit or open-decision cap. retryAfter in seconds." }
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hitch.dev/types/hitch.beat@1.schema.json",
+  "title": "hitch.beat@1",
+  "description": "Heartbeat every 25 s on SSE. Not stored; carries the head seq.",
+  "type": "object", "required": ["head"], "properties": { "head": { "$ref": "hitch.defs.schema.json#/$defs/seq" } }, "additionalProperties": false
+}

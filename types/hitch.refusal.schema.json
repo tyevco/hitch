@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hitch.dev/types/hitch.refusal.schema.json",
+  "title": "hitch/1 refusal",
+  "description": "Every non-2xx response body. code is from the closed set in codes.json; the HTTP status is fixed per code.",
+  "type": "object",
+  "required": ["spec", "code"],
+  "properties": {
+    "spec": { "$ref": "hitch.defs.schema.json#/$defs/spec" },
+    "code": { "enum": ["not_a_client", "tier", "scope", "step_up_required", "stale", "already", "gone", "withdrawn", "expired", "replay", "revoked", "gap", "unknown_type", "privacy", "rate", "suite", "unauthenticated", "invalid"] },
+    "message": { "type": "string", "maxLength": 500 },
+    "winner": {
+      "type": "object",
+      "description": "already: who answered first.",
+      "required": ["verb", "by", "at"],
+      "properties": { "verb": { "type": "string" }, "by": { "$ref": "hitch.defs.schema.json#/$defs/principal" }, "device": { "type": "string" }, "at": { "$ref": "hitch.defs.schema.json#/$defs/time" }, "where": { "type": "string" } }
+    },
+    "resync": { "type": "array", "items": { "enum": ["decisions", "items", "sessions", "messages", "clients", "feeds"] }, "description": "gap: lists to re-fetch before resuming from their cursor." },
+    "current": { "type": "object", "required": ["rev"], "properties": { "rev": { "type": "integer" }, "bindHash": { "$ref": "hitch.defs.schema.json#/$defs/hash" } }, "description": "stale: the current rev and bind." },
+    "retryAfter": { "type": "integer", "minimum": 0, "description": "rate: seconds." }
+  }
+}

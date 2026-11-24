@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hitch.dev/types/hitch.pairing.request.schema.json",
+  "title": "POST /hitch/v1/clients/pairings",
+  "description": "Step 1 of pairing. commit = sha256 of JCS({pub, nonce}) for commit-reveal SAS.",
+  "type": "object",
+  "required": [
+    "name",
+    "pub",
+    "commit",
+    "suite"
+  ],
+  "properties": {
+    "name": {
+      "type": "string",
+      "maxLength": 80
+    },
+    "suite": {
+      "$ref": "hitch.defs.schema.json#/$defs/suite"
+    },
+    "pub": {
+      "description": "ed25519: base64url x. p256: {x,y}. hmac-sha256: an X25519 public key (base64url) for sealing the secret.",
+      "oneOf": [
+        {
+          "$ref": "hitch.defs.schema.json#/$defs/b64u"
+        },
+        {
+          "type": "object",
+          "required": [
+            "x",
+            "y"
+          ],
+          "properties": {
+            "x": {
+              "$ref": "hitch.defs.schema.json#/$defs/b64u"
+            },
+            "y": {
+              "$ref": "hitch.defs.schema.json#/$defs/b64u"
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "presence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "kid",
+          "suite",
+          "pub"
+        ],
+        "properties": {
+          "kid": {
+            "type": "string"
+          },
+          "suite": {
+            "$ref": "hitch.defs.schema.json#/$defs/presenceSuite"
+          },
+          "pub": {},
+          "origins": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "rpId": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "commit": {
+      "$ref": "hitch.defs.schema.json#/$defs/hash"
+    }
+  }
+}

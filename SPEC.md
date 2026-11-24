@@ -187,9 +187,9 @@ flowchart TD
 | Commands | `POST …/answers`, `POST …/messages` (person-authored), `POST …/presence`, `POST …/publish` (owner types only) | |
 | Content | `GET /hitch/v1/content/:hash` (privacy-checked) | |
 
-- **Local:** `daemon.sock` (macOS and Linux). On Windows, the key-checked loopback TCP port from `api.json`. A loopback HTTP port keeps the Host and Origin guards. **A client proves the server with `/v1/sockhello` before sending credentials.** The server never assumes the caller is a person because of the transport.
+- **Local:** `daemon.sock` (macOS and Linux). On Windows, the key-checked loopback TCP port from `api.json`. A loopback HTTP port keeps the Host and Origin guards. **A client proves the server with `/hitch/v1/sockhello` before sending credentials.** The server never assumes the caller is a person because of the transport.
 - **LAN:** the existing listener (`lan/listener.mjs`, name-constrained CA, `guard.mjs`, network-change kill) serves `/hitch/v1` instead of Dashboard pages. The CA fingerprint goes in the pairing QR.
-- **Off-LAN:** new hub/1 ops `pb.relay` and `pb.event`. **Payloads are sealed end to end** with X25519 from pairing.mjs, so the hub routes but cannot read or forge. Herdquarters' SSH plus hc-gate path is a conformant transport if it carries the same envelopes.
+- **Off-LAN:** new hub/1 ops `hitch.relay` and `hitch.event`. **Payloads are sealed end to end** with X25519 from pairing.mjs, so the hub routes but cannot read or forge. Herdquarters' SSH plus hc-gate path is a conformant transport if it carries the same envelopes.
 - **Push:** wire `lan/push.mjs` (Web Push); add an APNs relay slot. Payload is `{head, counts, kinds}` only. A wake always means "re-list".
 - **Retention:** change notices kept 7 days. Decisions and audit kept permanently. Bus KEEP 500 stays for other types.
 - **Versioning:** majors per type, additive only. Dual-publish `@1` and `@2` for one release (the cx/1 alias rule). An unknown type passes through. An unknown decision kind renders generically, or shows "Open in another client" if an option needs kind-specific input.
@@ -228,9 +228,11 @@ flowchart TD
 
 **Presence (step-up):** required on **every confirm and local answer**. It is a signature by a user-presence-gated key over the canonical answer (shownHash included), valid 120 s and spent once. A **CLI gets it from a LocalAuthentication helper (Touch ID)** or Windows Hello, so Tyler can approve sends from a terminal and an agent running the CLI cannot. It replaces "Confirm it's you" without the GitHub round trip.
 
-**Requests:** signed with headers `pb-client`, `pb-nonce`, `pb-sig` over `"hitch/1\n"+aid+METHOD+path+sha256(body)+nonce`. Nonces come from the server (`/v1/nonce`) **or are client-issued and bounded by iat/exp ≤ 120 s**, so the hc-doc and hub store-and-forward paths work. Responses are signed by the node.
+**Requests:** signed with headers `hitch-client`, `hitch-nonce`, `hitch-iat`, `hitch-sig` (exact string in [Wire details](#wire-details-normative)). Nonces come from the server (`/hitch/v1/nonce`) **or are client-issued and bounded by iat/exp ≤ 120 s**, so the hc-doc and hub store-and-forward paths work. Responses are signed by the node.
 
-**Third-party clients:** they start at **narrow** and **meta**. Raising either is a local decision. Vendor decision kinds **default to local** (unreachable remotely) until a local decision assigns a tier. That answers how Herdquarters and pairview get floors without a spec release. Client-created decisions are rate-limited and always shown under their owner.
+**Starting ceilings.** The **first client** is paired through the OS dialog (SAS shown, Cancel by default, plus Touch ID or Windows Hello) and starts at **local**, with privacy `text`, answering with the presence key it registered; `local` still needs loopback (the transport clamp). **Every later client**, third-party ones included, starts at **decide** with privacy **meta**: its pairing is itself a local answer with presence. Raising either is a `hitch.client.scope@1` decision (local). hmac clients stay capped at decide. Presence keys sent in the pairing request are bound into the `hitch.client.pair@1` decision, shown to the approver, and recorded on the client when it is approved.
+
+**Third-party clients:** start as above. Vendor decision kinds **default to local** (unreachable remotely) until a local decision assigns a tier. That answers how Herdquarters and pairview get floors without a spec release. Client-created decisions are rate-limited and always shown under their owner.
 
 **Kill switch:** `hitch revoke --all`, local only with presence. Pairing attempts raise a `kernel.lan.access@1`-style tripwire decision.
 
@@ -263,11 +265,77 @@ flowchart TD
 | Server suite | `hitch-check` (node:test, no deps; a Python stdlib variant for pairview), black-box over a socket or URL | discovery; hello; SSE ≡ long-poll; resume; 410 gap with resync and no lost revs; body `from` overwritten; mod, app and session answer gives `not_a_client`; ceiling gives `tier`; missing presence gives `step_up_required`; stale rev, bind or shown gives `stale`; two clients give exactly one winner; restart past expiry gives `expired`, executor never called; no client for N minutes leaves state unchanged; revoked gives `revoked`; a grant on a safety kind is refused; an hmac suite on confirm is refused; a cross-aid replay is refused |
 | Client suite | `hitch-mock` (scripted server) | renders unknown kinds generically, never auto-answers, hides options above its ceiling, verifies node sigs, re-fetches on `stale`, shows nothing withheld, push wake leads to a re-list, shows "waiting for executor" honestly |
 
-**Closed refusal codes:** `not_a_client, tier, scope, step_up_required, stale, already, gone, withdrawn, expired, replay, revoked, gap, unknown_type, privacy, rate, suite`.
+**Closed refusal codes:** `not_a_client, tier, scope, step_up_required, stale, already, gone, withdrawn, expired, replay, revoked, gap, unknown_type, privacy, rate, suite, unauthenticated, invalid`. Each has a fixed HTTP status in [`codes.json`](codes.json).
+
+**The kit is built** (P0): [`types/`](types), [`codes.json`](codes.json), [`catalogue.json`](catalogue.json) and [`conformance/`](conformance/README.md): `hitch-check` (server, 36 checks over core, decisions and pairing), `hitch-client-check` with `hitch-mock` (client, 12 checks) and `hitch-catalog-check` (the `sdk:check` gate). The kit tests itself against an in-repo toy node and naive client, each with planted bugs that must turn their checks red. The Python stdlib variant for pairview is not built yet.
 
 **Profiles:** `core` (required: discovery, hello, lists, events, pair), `decisions`, `feeds`, `messaging`, `tasks`, `push`, `relay`, `federation`. `/.well-known` may claim only the profiles that passed.
 
 **Weekend core:** about 8 routes and 4 schemas (envelope, decision, answer, refusal).
+
+## Wire details (normative)
+
+Pinned 2026-11-23 with the reference client. The kit's [`conformance/lib/wire.mjs`](conformance/lib/wire.mjs) is the executable form; where this text and that file disagree, raise it.
+
+**Bytes and hashes**
+
+| What | Rule |
+|---|---|
+| Canonical bytes | JCS (RFC 8785), UTF-8, for every hash and every signature over an object |
+| Hash format | `sha256:` + 64 lowercase hex |
+| Binary in JSON | base64url, no padding |
+| Node signature (`sig`) | Ed25519 over JCS(object minus `sig`); `sig = {suite:"ed25519", kid:"node:<aid>", v}`. Envelopes, decision bodies (GET, lists, answer responses) and items are signed. Clients verify **before rendering** |
+| Node key | `/.well-known/hitch` `nodeKey = {suite:"ed25519", kid, x}`, `x` = JWK OKP coordinate (raw 32 bytes). Pinned at pairing |
+| `shownHash` | sha256(JCS({id, rev, title, summary, effect, preview})) of the record **as rendered**. `summary` is required (may be `""`) |
+| `bindHash` | computed by the node over the kind and its bound args; opaque to clients, echoed back |
+
+**Signatures by suite**
+
+| Suite | Public key on the wire | Signature `v` | Used for |
+|---|---|---|---|
+| `ed25519` | `x` (32 bytes) | raw 64 bytes | requests, presence |
+| `p256` | `{x, y}` (JWK EC) | raw `r‖s`, 64 bytes (WebCrypto / IEEE P1363). Secure Enclave DER is converted client-side | requests, presence |
+| `hmac-sha256` | none (secret sealed at pairing) | 32-byte tag | requests only; **max tier decide** |
+| `webauthn` | `{x, y}` from the COSE key, plus `origins[]` and `rpId` at pairing | the assertion signature **as returned** (ES256 = ASN.1 DER) | presence only |
+
+**Request signing.** Headers `hitch-client: <cid>`, `hitch-nonce`, `hitch-iat` (unix seconds), `hitch-sig` (base64url; the suite is fixed at pairing). The signed string is
+`["hitch/1", aid, METHOD, pathWithQuery, sha256hex(body), nonce, iat].join("\n")` (an empty body hashes the empty string). The node refuses `|now − iat| > 120 s` and a reused `(cid, nonce)` (`replay`). Agent, mod and app credentials use `Authorization: Bearer <token>` and are never persons.
+
+**Answers.** `POST /hitch/v1/decisions/:id/answers` takes a bare [`hitch.answer@1`](types/hitch.answer@1.schema.json) body: `{decisionId, aid, verb, rev, bindHash, shownHash, text?, iat, exp, nonce, presence?}`, `exp − iat ≤ 120`, nonce 16–64 base64url chars, spent once. `presence = {suite, kid, v}` signs JCS(answer minus `presence`). For `webauthn`, `presence` adds `ad` (authenticatorData) and `cd` (clientDataJSON); the WebAuthn challenge is the raw 32-byte sha256 of JCS(answer minus `presence`); the node checks `cd.type == "webauthn.get"`, the challenge, `cd.origin` in the recorded origins, rpIdHash = sha256(rpId), UP and UV both set, signCount strictly rising when non-zero, and the signature over `ad ‖ sha256(cd)`. A 200 returns the signed decision. A refusal names the first failing check, in this order: `unauthenticated`/`revoked` → `not_a_client` → `invalid` (schema, id mismatch, verb not offered) → grant `scope`/`rate` → `suite` → `tier` → `step_up_required` → `replay` (aid) → `withdrawn`/`expired` → `already` (+`winner`) → `stale` (+`current`) → `replay` (nonce, iat/exp).
+
+**Decision state.** `state` is `open | answered | resolved`. `answered` means an option was chosen and `action.state` is `queued | claimed | applied | failed`; clients show that as "waiting for executor", never as done. `resolved` carries `outcome` from the Decisions outcome set. `decline` and `deny` options are `narrow` unless the kind says otherwise.
+
+**Responses**
+
+| Route | Body |
+|---|---|
+| Lists | `{spec, resource, list:[…], cursor, next?}`. `cursor` is the event seq the list is consistent with: resume events with `after=cursor` |
+| Long-poll | `GET /hitch/v1/events?after=<seq>&wait=<≤25>` → `{spec, events:[envelope…], cursor}` |
+| SSE | `GET /hitch/v1/events` with `Accept: text/event-stream`; `id:` = seq, `event:` = type, `data:` = envelope JSON; resume with `Last-Event-ID` or `?after=`. Browsers read it with `fetch()` streaming (EventSource cannot send `hitch-*` headers) |
+| Gap | a cursor older than retention is `410 {code:"gap", resync:[…]}` on both long-poll and SSE connect |
+| Refusal | [`hitch.refusal`](types/hitch.refusal.schema.json): `{spec, code, message?, winner?, resync?, current?, retryAfter?}`, HTTP status fixed per code |
+| Content | `GET /hitch/v1/content/:hash` → raw bytes, the stored Content-Type, header `hitch-digest`. Clients hash what they got and compare with the preview row's `digest`; the header is not trusted |
+
+**Pairing wire.** All three routes are unauthenticated and rate-limited; the pairing id is the capability.
+
+| Step | Route | Body → response |
+|---|---|---|
+| Commit | `POST /hitch/v1/clients/pairings` | [`hitch.pairing.request`](types/hitch.pairing.request.schema.json) `{name, suite, pub, commit, presence?[]}`, `commit = sha256(JCS({pub, nonce}))`, nonce 16 random bytes → `202 {spec, pairing, serverNonce, expiresIn}` |
+| Reveal | `POST /hitch/v1/clients/pairings/:pairing/reveal` | `{nonce}` → `{spec, pairing, sas, decision}`, after checking the commit |
+| Status | `GET /hitch/v1/clients/pairings/:pairing` | `{spec, pairing, state: pending\|paired\|declined\|expired, client?, ceiling?, aid?}` |
+
+SAS = the first 64 bits of sha256(JCS({commit, clientNonce, serverNonce, pub})) mod 10⁶, zero-padded to 6 digits. The reveal raises a `hitch.client.pair@1` decision (floor local, safety grant) whose args and preview carry the presence keys (`{kid, suite, key: sha256(JCS(pub))}`). Starting ceilings are in Auth and trust: the first client local, every later client decide.
+
+**sockhello.** Before sending any credential over the local socket or the loopback TCP port, a client posts `POST /hitch/v1/sockhello {spec, challenge}` (32 random bytes, base64url; unauthenticated) and gets `{spec, aid, challenge, sig}`, where `sig` is the node key over JCS({purpose:"hitch-sockhello", spec:"hitch/1", aid, challenge}). The client checks the echo and the signature against the node key **pinned at pairing**, never against a discovery document fetched over the same socket. On failure it sends no credentials. Once per connection pool (per CLI run) is enough. There is no default socket path: it is recorded at pairing, and `HITCH_SOCKET` overrides it.
+
+**CORS.** The node answers CORS for the pairing routes from any Origin, and for the rest of `/hitch/v1` only from an Origin recorded in an active client's presence `origins`. Allow-Headers: `content-type, hitch-client, hitch-nonce, hitch-iat, hitch-sig, last-event-id`. No cookies and no Allow-Credentials.
+
+**Preview conventions** (so Haystack emits what clients render; rows stay generic):
+
+| Kind | Rows, in order | Options |
+|---|---|---|
+| `report.send@1` | To, Cc (optional), Subject, Week (ISO Monday), Body `{digest, ref, bytes}` | approve "Send" (confirm), sendBack needsText (decide), decline (narrow) |
+| `wins.confirm@1` | Win, Impact, Project, Detail (optional), Logged by | keep, edit needsText (the new title), discard (all decide) |
 
 ## What Haystack keeps, what is retired, what becomes the reference client
 
@@ -296,7 +364,7 @@ flowchart TD
 | **P5 (R1)** | **Quiet front:** delete standups, sweeps, lock, nudges, dialogs, PromptHint. Loopback Dashboard **read-only** for one release | each removal gated on its decision kind existing | coverage check from manifests: every kind renders in the reference client and Herdquarters |
 | P6 (post-R1) | Headless executors: kernel kinds first, then wins, playbook, forms, tasks, director, parley and outbox last (they need connectors in the daemon) | stragglers show "waiting for executor"; bind re-checked at claim | no `claimer=1` callers |
 | P7 (post-R1) | Retire Dashboard, menu bar (410 gone), banners, LAN pages | pending decisions migrated into the store | no `/api/*` hits for a release (/health counters) |
-| P8 (post-R1) | `pb.relay` / `pb.event`, sealed; APNs relay | the hub cannot read or forge | relay profile green |
+| P8 (post-R1) | `hitch.relay` / `hitch.event`, sealed; APNs relay | the hub cannot read or forge | relay profile green |
 | P9 (H9-gated) | Hub envelope converges; `/arc/*` shims go | **blocked on H9** (no proto-0 device for 30 days, `plan.md:804`) | `compat/v0.mjs` deleted |
 
 **Mixed versions:** during the overlap the answer route accepts decisions derived from mirror-only mods (via `inbox-compat.mjs`).

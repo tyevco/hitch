@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hitch.dev/types/hitch.events.schema.json",
+  "title": "Long-poll response (GET /hitch/v1/events?after=&wait=)",
+  "type": "object",
+  "required": ["spec", "events", "cursor"],
+  "properties": {
+    "spec": { "$ref": "hitch.defs.schema.json#/$defs/spec" },
+    "events": { "type": "array", "items": { "$ref": "hitch.envelope.schema.json" } },
+    "cursor": { "$ref": "hitch.defs.schema.json#/$defs/seq" }
+  }
+}

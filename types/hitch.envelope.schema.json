@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hitch.dev/types/hitch.envelope.schema.json",
+  "title": "hitch/1 envelope",
+  "description": "Every stream event, message and answer. Unknown top-level fields are ignored (additive within a major).",
+  "type": "object",
+  "required": ["spec", "id", "seq", "time", "type", "from", "privacy"],
+  "properties": {
+    "spec": { "$ref": "hitch.defs.schema.json#/$defs/spec" },
+    "id": { "$ref": "hitch.defs.schema.json#/$defs/ulid" },
+    "seq": { "$ref": "hitch.defs.schema.json#/$defs/seq" },
+    "time": { "$ref": "hitch.defs.schema.json#/$defs/time" },
+    "type": { "$ref": "hitch.defs.schema.json#/$defs/typeName" },
+    "subject": { "type": "string", "pattern": "^[a-z]+/[A-Za-z0-9_.@:-]+$" },
+    "from": { "$ref": "hitch.defs.schema.json#/$defs/from" },
+    "to": { "$ref": "hitch.defs.schema.json#/$defs/to" },
+    "replyTo": { "$ref": "hitch.defs.schema.json#/$defs/ulid" },
+    "trace": { "type": "string" },
+    "idem": { "type": "string", "maxLength": 200 },
+    "privacy": { "$ref": "hitch.defs.schema.json#/$defs/privacy" },
+    "data": { "type": "object" },
+    "ref": { "$ref": "hitch.defs.schema.json#/$defs/ref" },
+    "sig": { "$ref": "hitch.defs.schema.json#/$defs/sig" }
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hitch.dev/types/hitch.list.schema.json",
+  "title": "List response (GET /hitch/v1/{decisions,items,sessions,messages,clients})",
+  "description": "cursor is the event seq the list is consistent with: resume the stream with after=cursor. next pages through a long list.",
+  "type": "object",
+  "required": ["spec", "resource", "list", "cursor"],
+  "properties": {
+    "spec": { "$ref": "hitch.defs.schema.json#/$defs/spec" },
+    "resource": { "enum": ["decisions", "items", "sessions", "messages", "clients"] },
+    "list": { "type": "array", "items": { "type": "object" } },
+    "cursor": { "$ref": "hitch.defs.schema.json#/$defs/seq" },
+    "next": { "type": "string" }
+  }
+}

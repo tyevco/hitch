@@ -1,0 +1,340 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hitch.dev/types/hitch.defs.schema.json",
+  "title": "hitch/1 shared definitions",
+  "$defs": {
+    "spec": {
+      "const": "hitch/1"
+    },
+    "ulid": {
+      "type": "string",
+      "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "rid": {
+      "type": "string",
+      "pattern": "^[a-z]{2,5}_[0-9A-HJKMNP-TV-Z]{26}$",
+      "description": "Resource id: prefix + ULID (dec_, itm_, act_, msg_, c_, gr_)."
+    },
+    "seq": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "time": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "unix": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "hash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "b64u": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]*$"
+    },
+    "aid": {
+      "type": "string",
+      "pattern": "^[a-z0-9]{6,32}$"
+    },
+    "typeName": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*(\\.[a-z][a-zA-Z0-9-]*)+@[1-9][0-9]*$",
+      "description": "owner.name[.sub]@major"
+    },
+    "tier": {
+      "enum": [
+        "narrow",
+        "decide",
+        "confirm",
+        "local"
+      ]
+    },
+    "privacy": {
+      "enum": [
+        "public",
+        "counts",
+        "meta",
+        "text",
+        "secret"
+      ]
+    },
+    "safety": {
+      "enum": [
+        "send",
+        "merge",
+        "deploy",
+        "signin",
+        "grant",
+        "none"
+      ]
+    },
+    "suite": {
+      "enum": [
+        "hmac-sha256",
+        "p256",
+        "ed25519"
+      ]
+    },
+    "presenceSuite": {
+      "enum": [
+        "p256",
+        "ed25519",
+        "webauthn"
+      ]
+    },
+    "principal": {
+      "type": "string",
+      "pattern": "^(node|(mod|app|session|client|grant|peer):[A-Za-z0-9._@-]+)$"
+    },
+    "from": {
+      "type": "object",
+      "description": "Stamped by the node from the credential. A body-supplied from is overwritten.",
+      "required": [
+        "aid",
+        "principal"
+      ],
+      "properties": {
+        "aid": {
+          "$ref": "#/$defs/aid"
+        },
+        "member": {
+          "type": "string"
+        },
+        "principal": {
+          "$ref": "#/$defs/principal"
+        },
+        "login": {
+          "type": "string"
+        },
+        "device": {
+          "type": "string"
+        }
+      }
+    },
+    "to": {
+      "type": "object",
+      "description": "Exactly one addressing form.",
+      "oneOf": [
+        {
+          "required": [
+            "session"
+          ]
+        },
+        {
+          "required": [
+            "aid"
+          ]
+        },
+        {
+          "required": [
+            "member"
+          ]
+        },
+        {
+          "required": [
+            "group",
+            "role"
+          ]
+        },
+        {
+          "required": [
+            "person"
+          ]
+        },
+        {
+          "required": [
+            "connector"
+          ]
+        },
+        {
+          "required": [
+            "client"
+          ]
+        }
+      ],
+      "properties": {
+        "session": {
+          "type": "string"
+        },
+        "aid": {
+          "$ref": "#/$defs/aid"
+        },
+        "member": {
+          "type": "string"
+        },
+        "group": {
+          "type": "string"
+        },
+        "role": {
+          "const": "lead"
+        },
+        "person": {
+          "type": "string"
+        },
+        "connector": {
+          "type": "string"
+        },
+        "client": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "sig": {
+      "type": "object",
+      "required": [
+        "suite",
+        "kid",
+        "v"
+      ],
+      "properties": {
+        "suite": {
+          "const": "ed25519"
+        },
+        "kid": {
+          "type": "string"
+        },
+        "v": {
+          "$ref": "#/$defs/b64u"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ref": {
+      "type": "object",
+      "required": [
+        "content",
+        "bytes"
+      ],
+      "properties": {
+        "content": {
+          "$ref": "#/$defs/hash"
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "presence": {
+      "type": "object",
+      "required": [
+        "suite",
+        "kid",
+        "v"
+      ],
+      "properties": {
+        "suite": {
+          "$ref": "#/$defs/presenceSuite"
+        },
+        "kid": {
+          "type": "string"
+        },
+        "v": {
+          "$ref": "#/$defs/b64u"
+        },
+        "ad": {
+          "$ref": "#/$defs/b64u",
+          "description": "webauthn only: authenticatorData"
+        },
+        "cd": {
+          "$ref": "#/$defs/b64u",
+          "description": "webauthn only: clientDataJSON"
+        }
+      },
+      "additionalProperties": false
+    },
+    "previewRow": {
+      "type": "object",
+      "required": [
+        "label"
+      ],
+      "properties": {
+        "label": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "value": {
+          "type": "string",
+          "maxLength": 2000
+        },
+        "digest": {
+          "$ref": "#/$defs/hash"
+        },
+        "ref": {
+          "$ref": "#/$defs/hash"
+        },
+        "withheld": {
+          "type": "boolean",
+          "description": "The value exists but the client's scope does not cover its privacy class."
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "option": {
+      "type": "object",
+      "required": [
+        "verb",
+        "tier"
+      ],
+      "properties": {
+        "verb": {
+          "type": "string",
+          "pattern": "^[a-z][A-Za-z0-9]*$"
+        },
+        "label": {
+          "type": "string",
+          "maxLength": 40
+        },
+        "tier": {
+          "$ref": "#/$defs/tier"
+        },
+        "allowedForYou": {
+          "type": "boolean",
+          "description": "Computed per reading client: tier within its ceiling after the transport clamp."
+        },
+        "needsText": {
+          "type": "boolean"
+        },
+        "maxText": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 8000
+        },
+        "kindInput": {
+          "type": "boolean",
+          "description": "Needs kind-specific input; generic clients show 'Open in another client'."
+        }
+      },
+      "additionalProperties": false
+    },
+    "outcome": {
+      "enum": [
+        "applied",
+        "failed",
+        "declined",
+        "sent-back",
+        "withdrawn",
+        "expired",
+        "resolved-elsewhere",
+        "fallback"
+      ]
+    },
+    "actionState": {
+      "enum": [
+        "queued",
+        "claimed",
+        "applied",
+        "failed"
+      ]
+    }
+  }
+}

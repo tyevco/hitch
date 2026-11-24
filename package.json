@@ -1,0 +1,31 @@
+{
+  "name": "hitch",
+  "version": "0.1.0",
+  "description": "hitch/1: schemas and conformance kit for the open client standard of a headless agent backend",
+  "license": "MIT",
+  "type": "module",
+  "private": true,
+  "engines": { "node": ">=22" },
+  "bin": {
+    "hitch-check": "conformance/server/hitch-check.mjs",
+    "hitch-client-check": "conformance/client/hitch-client-check.mjs",
+    "hitch-catalog-check": "conformance/catalog-check.mjs"
+  },
+  "exports": {
+    "./wire": "./conformance/lib/wire.mjs",
+    "./schema": "./conformance/lib/schema.mjs",
+    "./client": "./conformance/lib/client.mjs",
+    "./mock": "./conformance/client/hitch-mock.mjs",
+    "./server-checks": "./conformance/server/checks.mjs",
+    "./client-checks": "./conformance/client/checks.mjs",
+    "./catalog-check": "./conformance/catalog-check.mjs",
+    "./types/*": "./types/*",
+    "./codes.json": "./codes.json",
+    "./catalogue.json": "./catalogue.json"
+  },
+  "scripts": {
+    "test": "node --test --test-concurrency=1 --test-timeout=60000 \"test/*.test.mjs\"",
+    "check:toy": "node conformance/server/hitch-check.mjs --adapter conformance/example/toy-check-adapter.mjs",
+    "check:naive-client": "node conformance/client/hitch-client-check.mjs --client conformance/example/naive-client-adapter.mjs"
+  }
+}

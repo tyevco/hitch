@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hitch.dev/types/wins.confirm@1.schema.json",
+  "title": "wins.confirm@1 (decision kind, floor decide): bound args",
+  "description": "Confirm a logged win. Preview rows, in order: Win, Impact, Project, Detail (optional), Logged by. Options: keep (decide), edit needsText = the replacement title (decide), discard (decide). Richer edits use an option with kindInput.",
+  "type": "object",
+  "required": ["win", "title"],
+  "properties": {
+    "win": { "type": "string", "description": "wins entry id" },
+    "title": { "type": "string", "maxLength": 300 },
+    "impact": { "type": "string", "maxLength": 500 },
+    "project": { "type": "string", "maxLength": 120 },
+    "detail": { "type": "string", "maxLength": 2000 },
+    "loggedBy": { "type": "string", "maxLength": 120 }
+  },
+  "additionalProperties": false
+}

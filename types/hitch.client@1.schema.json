@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hitch.dev/types/hitch.client@1.schema.json",
+  "title": "hitch.client@1: a paired client",
+  "type": "object",
+  "required": ["spec", "id", "name", "suite", "ceiling", "privacy", "scopes", "state", "paired"],
+  "properties": {
+    "spec": { "$ref": "hitch.defs.schema.json#/$defs/spec" },
+    "id": { "type": "string", "pattern": "^c_[A-Za-z0-9]+$" },
+    "name": { "type": "string", "maxLength": 80 },
+    "device": { "type": "string" },
+    "suite": { "$ref": "hitch.defs.schema.json#/$defs/suite" },
+    "presence": { "type": "array", "items": { "type": "object", "required": ["kid", "suite"], "properties": { "kid": { "type": "string" }, "suite": { "$ref": "hitch.defs.schema.json#/$defs/presenceSuite" } } } },
+    "ceiling": { "$ref": "hitch.defs.schema.json#/$defs/tier" },
+    "privacy": { "$ref": "hitch.defs.schema.json#/$defs/privacy" },
+    "scopes": { "type": "array", "items": { "type": "string" } },
+    "bridge": { "type": "boolean", "description": "Chat bridge: ceiling never above narrow." },
+    "state": { "enum": ["pending", "active", "revoked"] },
+    "paired": { "$ref": "hitch.defs.schema.json#/$defs/time" },
+    "lastSeen": { "$ref": "hitch.defs.schema.json#/$defs/time" }
+  }
+}

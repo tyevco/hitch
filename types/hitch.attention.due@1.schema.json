@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hitch.dev/types/hitch.attention.due@1.schema.json",
+  "title": "hitch.attention.due@1",
+  "type": "object", "required": ["ids", "level", "reason"],
+  "properties": {
+    "ids": { "type": "array", "items": { "type": "string" } },
+    "level": { "enum": ["low", "normal", "high"] },
+    "reason": { "enum": ["new", "ladder", "batch"] }
+  }
+}

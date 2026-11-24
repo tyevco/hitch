@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hitch.dev/types/hitch.push@1.schema.json",
+  "title": "Push payload (Web Push / APNs)",
+  "description": "Counts and kinds only. A wake always means re-list.",
+  "type": "object", "required": ["head", "counts"],
+  "properties": {
+    "head": { "$ref": "hitch.defs.schema.json#/$defs/seq" },
+    "counts": { "type": "object", "additionalProperties": { "type": "integer", "minimum": 0 } },
+    "kinds": { "type": "array", "items": { "$ref": "hitch.defs.schema.json#/$defs/typeName" } }
+  },
+  "additionalProperties": false
+}

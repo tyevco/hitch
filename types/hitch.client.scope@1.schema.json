@@ -1,0 +1,7 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hitch.dev/types/hitch.client.scope@1.schema.json",
+  "title": "hitch.client.scope@1 (decision kind, floor local)",
+  "type": "object", "required": ["client"],
+  "properties": { "client": { "type": "string" }, "ceiling": { "$ref": "hitch.defs.schema.json#/$defs/tier" }, "privacy": { "$ref": "hitch.defs.schema.json#/$defs/privacy" }, "scopes": { "type": "array", "items": { "type": "string" } } }
+}

@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hitch.dev/types/hitch.session@1.schema.json",
+  "title": "hitch.session@1: an agent session (never answers)",
+  "type": "object",
+  "required": ["spec", "sid", "aid", "project", "status"],
+  "properties": {
+    "spec": { "$ref": "hitch.defs.schema.json#/$defs/spec" },
+    "sid": { "type": "string" },
+    "aid": { "$ref": "hitch.defs.schema.json#/$defs/aid" },
+    "member": { "type": "string" },
+    "project": { "type": "string" },
+    "status": { "enum": ["started", "busy", "idle", "waiting", "ended"] },
+    "doing": { "type": "string", "maxLength": 300 },
+    "since": { "$ref": "hitch.defs.schema.json#/$defs/time" }
+  }
+}

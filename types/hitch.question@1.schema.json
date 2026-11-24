@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hitch.dev/types/hitch.question@1.schema.json",
+  "title": "hitch.question@1 (decision kind, floor decide; not consent)",
+  "type": "object", "required": ["question", "choices"],
+  "properties": {
+    "question": { "type": "string", "maxLength": 2000 },
+    "choices": { "type": "array", "minItems": 1, "maxItems": 8, "items": { "type": "string", "maxLength": 80 } },
+    "defaultable": { "type": "string", "description": "Requester fallback choice, recorded as outcome fallback on expiry." }
+  }
+}
