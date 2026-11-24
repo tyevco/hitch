@@ -416,7 +416,7 @@ export function createNode({ store = createStore(), clock = { now: () => Date.no
       const rv = path.match(/^\/hitch\/v1\/clients\/(c_[A-Za-z0-9]+)\/revoke$/);
       if (req.method === 'POST' && rv) return send(res, 200, revokeOne(p, rv[1], body));
       if (req.method === 'POST' && path === '/hitch/v1/clients/revoke-all') return send(res, 200, revokeAll(p, body));
-      const fm = path.match(/^\/hitch\/v1\/feeds\/([a-z][a-z0-9-]*(?:\.[a-z][a-zA-Z0-9-]*)+@[1-9][0-9]*)$/);
+      const fm = decodeURIComponent(path).match(/^\/hitch\/v1\/feeds\/([a-z][a-z0-9-]*(?:\.[a-z][a-zA-Z0-9-]*)+@[1-9][0-9]*)$/);
       if (req.method === 'GET' && fm) {
         if (p.client && !p.client.scopes.includes('read')) throw new Refusal('scope');
         const f = store.feeds.get(fm[1]);

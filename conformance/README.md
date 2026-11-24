@@ -46,7 +46,7 @@ export default {
 };
 ```
 
-The toy node's adapter, [`example/toy-adapter.mjs`](example/toy-adapter.mjs), is a working example.
+The toy node's adapter, [`example/toy-adapter.mjs`](example/toy-adapter.mjs), is a working example. **Haystack engineers:** start with [HAYSTACK-ADAPTER.md](HAYSTACK-ADAPTER.md), which covers the build order, where each hook lives in v2, and the traps.
 
 **Profiles.** The output ends with `may claim: …`. A profile is claimable only when all its checks passed and none were skipped. `/.well-known/hitch` claiming more than that fails the run (`OVERCLAIMED`).
 
