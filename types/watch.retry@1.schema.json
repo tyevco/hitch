@@ -27,6 +27,9 @@
     "attempts": {
       "type": "integer",
       "minimum": 0
+    },
+    "v2": {
+      "$ref": "hitch.defs.schema.json#/$defs/v2bridge"
     }
   },
   "additionalProperties": false
