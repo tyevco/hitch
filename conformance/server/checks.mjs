@@ -325,6 +325,46 @@ export const CHECKS = [
       assert.equal(r.status, 200, 'a grant answers its non-safety kind');
       assert.match(r.body.answered.by, /^grant:/);
     } },
+  { id: 'uncertain-never-reruns', profile: 'decisions', title: 'invoked with no done: after the lease the outcome is uncertain, a hitch.retry@1 asks the person, and nothing re-runs on its own', needs: ['advanceClock', 'executorCalls', 'crashNextExecution'],
+    async run(ctx) {
+      const { adapter, as } = ctx;
+      const id = await adapter.requestDecision(send);
+      await adapter.crashNextExecution();
+      assert.equal((await as('clientConfirm').answer(id, 'approve')).status, 200);
+      assert.equal(await adapter.executorCalls(id), 1, 'invoked once');
+      await adapter.advanceClock(11 * 60_000);
+      const d = (await as('clientDecide').decision(id)).body;
+      assert.equal(d.state, 'resolved'); assert.equal(d.outcome, 'uncertain', `outcome ${d.outcome}`);
+      assert.ok(d.followUp, 'names its hitch.retry@1 decision');
+      await adapter.advanceClock(60 * 60_000);
+      await as('clientDecide').list('decisions');
+      assert.equal(await adapter.executorCalls(id), 1, 'never re-run automatically');
+      const r = (await as('clientDecide').decision(d.followUp)).body;
+      ok('hitch.decision@1', r);
+      assert.equal(r.kind, 'hitch.retry@1'); assert.equal(r.state, 'open'); assert.equal(r.followUpOf, id);
+      assert.equal(r.safety, 'send', 'inherits the original safety, so no grant can answer it');
+      assert.equal(r.options.find((o) => o.verb === 'retry').tier, 'confirm', 'retry needs the tier of the option first chosen');
+      assert.ok(r.preview.some((x) => x.label === 'Invoked'), 'shows the evidence');
+      refused(await as('clientDecide').answer(d.followUp, 'retry'), 'tier', 'decide client:');
+      refused(await as('clientConfirm').answer(id, 'approve', { decision: d }), 'already', 'the original is never answered again:');
+      const ok2 = await as('clientConfirm').answer(d.followUp, 'retry');
+      assert.equal(ok2.status, 200, JSON.stringify(ok2.body));
+      assert.equal(await adapter.executorCalls(id), 2, 'retry runs the original once more, only because the person said so');
+      assert.equal((await as('clientDecide').decision(id)).body.outcome, 'uncertain', 'the original stays uncertain');
+      assert.equal((await as('clientDecide').decision(d.followUp)).body.outcome, 'applied');
+    } },
+  { id: 'uncertain-leave-it', profile: 'decisions', title: 'declining the retry runs nothing', needs: ['advanceClock', 'executorCalls', 'crashNextExecution'],
+    async run(ctx) {
+      const { adapter, as } = ctx;
+      const id = await adapter.requestDecision(plain);
+      await adapter.crashNextExecution();
+      assert.equal((await as('clientDecide').answer(id, 'approve')).status, 200);
+      await adapter.advanceClock(11 * 60_000);
+      const d = (await as('clientDecide').decision(id)).body;
+      assert.equal(d.outcome, 'uncertain');
+      assert.equal((await as('clientDecide').answer(d.followUp, 'decline')).status, 200);
+      assert.equal(await adapter.executorCalls(id), 1);
+    } },
 
   // ---- pairing ------------------------------------------------------------------------
   { id: 'pairing-sas', profile: 'pairing', title: 'commit-reveal yields the same 6-digit SAS on both sides and a local hitch.client.pair@1 decision',

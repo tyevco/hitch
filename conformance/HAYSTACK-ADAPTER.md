@@ -20,7 +20,7 @@ node conformance/server/hitch-check.mjs --adapter ../claude-extended-v2/haystack
 | **P1** | `core` | first add the **node key** and **clock** seams (below); then `/.well-known/hitch`, `sockhello`, `hello`, `nonce`, the five lists, `events` (SSE + long-poll), `publish` | `setup`, `teardown`, `principals` (mod, app, session, session2, clientDecide), `requestDecision` (to make events), `trimEvents`, `publishType` |
 | **P1** | `feeds` | `GET /hitch/v1/feeds/:feed` | `setFeed`, `mintClient` |
 | **P2** | `pairing` | `clients/pairings` (commit, reveal, status), `clients/:cid/revoke`, `clients/revoke-all` | `mintClient`, `principals` (clientConfirm, clientLocal with presence keys), `revokeClient` |
-| **P3** | `decisions` | `GET decisions/:id`, `POST …/answers`, `GET …/audit` | `editDecision`, `executorCalls`, `advanceClock`, `restart`, `issueGrant` |
+| **P3** | `decisions` | `GET decisions/:id`, `POST …/answers`, `GET …/audit` | `editDecision`, `executorCalls`, `advanceClock`, `restart`, `issueGrant`, `crashNextExecution` |
 | P3+ | `messaging` | `POST /messages`, `POST /messages/:id/state` | `principals.session2` |
 
 P2 cannot finish before P3's answer route exists, because pairing approval is a `hitch.client.pair@1` decision answered at the local tier. Build the answer route's skeleton (the refusal funnel) in P2 and finish it in P3.
@@ -38,6 +38,7 @@ The adapter is **test-only code**. Keep it outside the shipped bundle (for examp
 | `restart()` | stop and start the daemon on the **same** state dir; return the new `{url}` if the port changed | keep in-memory state across the restart (the expiry check exists to prove persistence) |
 | `executorCalls(id)` | count real executor invocations for the decision's action | infer from state: an executor that ran and failed still counts |
 | `trimEvents(n)` | drop the oldest `n` events as retention would, moving the gap floor | delete decisions (they are never compacted) |
+| `crashNextExecution()` | make the next executor run write `action.invoked` and then stop without `done`, as a crash would | fake it by editing state: the check proves the real lease sweep |
 | `issueGrant({kinds})` | create the grant through the same path a `hitch.grant.issue@1` outcome uses; throw `invalid` for a safety kind | bypass the safety-kind refusal |
 
 A full annotated adapter is in [README.md](README.md#server-suite-writing-an-adapter); `example/toy-adapter.mjs` is a working one.

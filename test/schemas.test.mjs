@@ -51,7 +51,8 @@ test('refusal codes: the schema enum and codes.json agree', () => {
 test('catalogue: every hitch-owned type has a schema; decision kinds have floors; safety kinds are never below confirm', () => {
   for (const [t, c] of Object.entries(catalogue.types)) {
     if (c.owner === 'hitch') assert.ok(V.has(t), `${t} needs a schema`);
-    if (c.decision) assert.ok(['decide', 'confirm', 'local', 'vendor'].includes(c.floor), t);
+    if (c.decision) assert.ok(['decide', 'confirm', 'local', 'vendor', 'inherit'].includes(c.floor), t);
+    if (c.floor === 'inherit') { assert.equal(c.safety, 'inherit', `${t}: an inherited floor inherits safety too`); continue; }
     if (c.decision && c.safety !== 'none') assert.ok(['confirm', 'local'].includes(c.floor), `${t} is a safety kind`);
   }
 });

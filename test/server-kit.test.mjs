@@ -26,6 +26,7 @@ const PLANTED = {
   revokeOthersFree: ['revoke-other'],
   noEventFilter: ['message-session-scope', 'message-privacy'],
   anyoneAcks: ['message-delivery'],
+  autoRetry: ['uncertain-never-reruns'],
   sasNoNodeKey: ['pairing-sas', 'pairing-impostor'],
 };
 for (const [bug, ids] of Object.entries(PLANTED)) {

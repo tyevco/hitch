@@ -336,7 +336,8 @@
         "queued",
         "claimed",
         "applied",
-        "failed"
+        "failed",
+        "uncertain"
       ]
     }
   }

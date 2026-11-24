@@ -126,9 +126,9 @@ flowchart LR
 | `action.bind` | the executor re-checks the bind at claim | `ok`, `bindHash` recomputed. On a mismatch the outcome is `failed` and nothing runs |
 | `action.invoked` | **just before** the side effect | `attempt`. This is what the adapter's `executorCalls(id)` counts |
 | `action.done` | the executor reports | `ok`, a `result` digest, `late` (true when the lease had lapsed) |
-| `action.lease-expired` | the tick finds a lapsed lease | lets another claimer take it |
+| `action.lease-expired` | the tick finds a lapsed lease | after `invoked`: the outcome is `uncertain` and `hitch.retry@1` is raised; before `invoked`: the action returns to `queued` |
 
-- **A late `done` is recorded, not dropped.** The side effect happened, so the truth matters more than the lease. If a second claimer already invoked, the decision resolves `failed`, with both invocations in the log, and Tyler sees a duplicate-run item. That is honest rather than silent.
+- **Never re-run a side effect automatically** (lead decision). When a lease ends after `action.invoked` with no `action.done`, the decision resolves **`uncertain`** and the node raises a **`hitch.retry@1`** decision. It shows the evidence (when the action was invoked, when the lease ended, runs so far), offers `retry` at the tier first chosen with the original's safety, and offers "Leave it". A lapsed lease is never handed to another claimer. A `done` that arrives after the lease is recorded as `action.done {late: true}` against the `uncertain` decision, for Tyler to see; it does not change the outcome. Checked by `uncertain-never-reruns` and `uncertain-leave-it`.
 - **No retry into a new outcome.** A `failed` outcome stays failed; running it again takes a new decision (SPEC Decisions, step 7).
 - `action.invoked` is written and fsynced **before** the side effect. A crash between the two then shows as invoked-without-done, which is the case a person must look at, never a silent re-run.
 
@@ -137,4 +137,4 @@ flowchart LR
 1. ~~Kid format~~: decided and landed (`node:<aid>:<fp>`).
 2. **Mod pairings never become clients.** This follows SPEC Principle 3, but some first-party mods may rely on acting as the person today. Their read paths need an inventory before P3 freezes them.
 3. **Audit size and archive at 12 months.** These are estimates; check against a week of real decision counts once P3 runs.
-4. **The duplicate-run policy** (a late `done` while another claimer invoked): resolve `failed` and raise an item, as above, or hold the outcome until Tyler decides?
+4. ~~Duplicate-run policy~~: decided. Nothing re-runs automatically; the outcome is `uncertain` and a `hitch.retry@1` decision is raised.

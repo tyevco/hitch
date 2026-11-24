@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hitch.dev/types/hitch.retry@1.schema.json",
+  "title": "hitch.retry@1 (decision kind, raised by the node): bound args",
+  "description": "Raised when an action was invoked and never reported done before its lease ended. Its floor is the tier of the option originally chosen and its safety is the original's, so a grant can never answer it. retry re-runs the ORIGINAL bound args after re-checking the original bind; decline ('Leave it') runs nothing. Preview rows: Decision, Kind, Chosen, Invoked, Lease ended, Result, Runs so far.",
+  "type": "object",
+  "required": [
+    "decision",
+    "kind",
+    "verb",
+    "bindHash",
+    "invokedAt",
+    "leaseUntil",
+    "attempts"
+  ],
+  "properties": {
+    "decision": {
+      "type": "string",
+      "pattern": "^dec_"
+    },
+    "kind": {
+      "$ref": "hitch.defs.schema.json#/$defs/typeName"
+    },
+    "verb": {
+      "type": "string"
+    },
+    "bindHash": {
+      "$ref": "hitch.defs.schema.json#/$defs/hash"
+    },
+    "invokedAt": {
+      "$ref": "hitch.defs.schema.json#/$defs/time"
+    },
+    "leaseUntil": {
+      "$ref": "hitch.defs.schema.json#/$defs/time"
+    },
+    "attempts": {
+      "type": "integer",
+      "minimum": 1
+    }
+  },
+  "additionalProperties": false
+}

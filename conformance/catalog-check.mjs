@@ -28,6 +28,7 @@ export function check({ types = [], decisionKinds = [], schemaDirs = [], tiers =
   }
   for (const k of new Set(decisionKinds)) {
     const c = catalogue.types[k];
+    if (c?.floor === 'inherit') continue; // raised by the node; tier and safety come from the original decision
     const floor = c?.floor === 'vendor' ? 'local' : c?.floor;
     const tier = tiers[k] ?? floor;
     if (!tier || !TIER.has(tier)) findings.push({ type: k, problem: 'decision kind without a tier' });

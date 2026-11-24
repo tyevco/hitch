@@ -111,6 +111,7 @@ flowchart TD
 | `hitch.client.scope@1` | hitch | decision: raise a client's scope | **local** |
 | `hitch.grant.issue@1` | hitch | decision: `{kinds[], scope, ttl, caps}`; **safety kinds forbidden** | **local** |
 | `hitch.question@1` | hitch | a session question; may be `defaultable` (requester fallback). **Not consent.** | decide |
+| `hitch.retry@1` | hitch | raised by the node for an `uncertain` outcome: `{decision, kind, verb, bindHash, invokedAt, leaseUntil, attempts}` | inherits the chosen option's tier and the original safety |
 | `kernel.session.started/status/ended@1` | kernel | `{sid, aid, member?, project, status, doing}` | — |
 | `kernel.job.approve@1` | kernel | decision bound to the prompt hash | confirm |
 | `kernel.mod.admit@1` | kernel | decision (replaces "approve herdr-teams on the Dashboard") | local |
@@ -160,7 +161,8 @@ flowchart TD
 | 4. Answer | `POST /hitch/v1/decisions/:id/answers` carries `{verb, rev, bindHash, shownHash, aid, iat, exp≤120s, nonce, presence?}`. `shownHash` is the hash of the exact title, effect and preview the client rendered, so a relay cannot relabel a decision. `aid` stops a replay to another of Tyler's nodes. | herdr-intent/v1 |
 | 5. Checks, in order | person-client or grant → not revoked → verb offered → option tier ≤ client ceiling, after the transport clamp → kind allow-list or `remoteApprove` → presence proof for confirm and local → rev, bind and shown hash current → open (CAS) → nonce fresh, iat/exp. | `webAction` + `lan/tiers.mjs` gate, one funnel |
 | 6. Execute | `action.queued`. Args stay server-side. An **in-process executor** (or one holding a kernel-minted executor credential, **never a hello token**) claims with a lease and **re-checks the bind at claim** for every kind. Sends still get their ticket only in the claim answer. Queue answers re-check the visible pane against the bind **at keypress time**. | tickets.mjs, paneanswer.mjs |
-| 7. Resolve | Outcomes: `applied`, `failed`, `declined`, `sent-back`, `withdrawn`, `expired`, `resolved-elsewhere{by, where}`, `fallback` (questions only). A failure never retries into a new outcome without a new decision. | Switchyard outcomes |
+| 7. Resolve | Outcomes: `applied`, `failed`, `declined`, `sent-back`, `withdrawn`, `expired`, `resolved-elsewhere{by, where}`, `fallback` (questions only), `uncertain`. A failure never retries into a new outcome without a new decision. | Switchyard outcomes |
+| 8. Unknown result | **A side effect is never re-run automatically.** The executor logs `invoked` before the effect. If the lease ends with no `done`, the decision resolves **`uncertain`** (`followUp` names a new decision) and the node raises **`hitch.retry@1`**: the evidence as preview rows, `retry` at the tier of the option first chosen, and `decline` ("Leave it"). Its safety is the original's, so no grant can answer it. `retry` re-runs the original bound args after re-checking the original bind. The original decision is never answered or re-applied again. | lead decision 2026-11-23 |
 
 **Multiple clients.** All see the same record. The first valid answer wins by CAS on `rev`. The others get `already` plus the winner, and must show "answered on <device>". Later and snooze are **client-local**. The node keeps no `inboxDismissed`.
 
@@ -270,7 +272,7 @@ flowchart TD
 
 **Closed refusal codes:** `not_a_client, tier, scope, step_up_required, stale, already, gone, withdrawn, expired, replay, revoked, gap, unknown_type, privacy, rate, suite, unauthenticated, invalid`. Each has a fixed HTTP status in [`codes.json`](codes.json).
 
-**The kit is built** (P0): [`types/`](types), [`codes.json`](codes.json), [`catalogue.json`](catalogue.json) and [`conformance/`](conformance/README.md): `hitch-check` (server, 49 checks over core, decisions, pairing, feeds and messaging), `hitch-client-check` with `hitch-mock` (client, 12 checks) and `hitch-catalog-check` (the `sdk:check` gate). The kit tests itself against an in-repo toy node and naive client, each with planted bugs that must turn their checks red. A Python stdlib client kit for pairview (`conformance/python/`) runs the same client checks over the hmac suite.
+**The kit is built** (P0): [`types/`](types), [`codes.json`](codes.json), [`catalogue.json`](catalogue.json) and [`conformance/`](conformance/README.md): `hitch-check` (server, 51 checks over core, decisions, pairing, feeds and messaging), `hitch-client-check` with `hitch-mock` (client, 12 checks) and `hitch-catalog-check` (the `sdk:check` gate). The kit tests itself against an in-repo toy node and naive client, each with planted bugs that must turn their checks red. A Python stdlib client kit for pairview (`conformance/python/`) runs the same client checks over the hmac suite.
 
 **Profiles:** `core` (required: discovery, hello, lists, events, pair), `decisions`, `feeds`, `messaging`, `tasks`, `push`, `relay`, `federation`. `/.well-known` may claim only the profiles that passed.
 
@@ -306,7 +308,7 @@ Pinned 2026-11-23 with the reference client. The kit's [`conformance/lib/wire.mj
 
 **Answers.** `POST /hitch/v1/decisions/:id/answers` takes a bare [`hitch.answer@1`](types/hitch.answer@1.schema.json) body: `{decisionId, aid, verb, rev, bindHash, shownHash, text?, iat, exp, nonce, presence?}`, `exp − iat ≤ 120`, nonce 16–64 base64url chars, spent once. `presence = {suite, kid, v}` signs JCS(answer minus `presence`). For `webauthn`, `presence` adds `ad` (authenticatorData) and `cd` (clientDataJSON); the WebAuthn challenge is the raw 32-byte sha256 of JCS(answer minus `presence`); the node checks `cd.type == "webauthn.get"`, the challenge, `cd.origin` in the recorded origins, rpIdHash = sha256(rpId), UP and UV both set, signCount strictly rising when non-zero, and the signature over `ad ‖ sha256(cd)`. A 200 returns the signed decision. A refusal names the first failing check, in this order: `unauthenticated`/`revoked` → `not_a_client` → `invalid` (schema, id mismatch, verb not offered) → grant `scope`/`rate` → `suite` → `tier` → `step_up_required` → `replay` (aid) → `withdrawn`/`expired` → `already` (+`winner`) → `stale` (+`current`) → `replay` (nonce, iat/exp).
 
-**Decision state.** `state` is `open | answered | resolved`. `answered` means an option was chosen and `action.state` is `queued | claimed | applied | failed`; clients show that as "waiting for executor", never as done. `resolved` carries `outcome` from the Decisions outcome set. `decline` and `deny` options are `narrow` unless the kind says otherwise.
+**Decision state.** `state` is `open | answered | resolved`. `answered` means an option was chosen and `action.state` is `queued | claimed | applied | failed | uncertain`; clients show that as "waiting for executor", never as done. `resolved` carries `outcome` from the Decisions outcome set. `decline` and `deny` options are `narrow` unless the kind says otherwise.
 
 **Responses**
 

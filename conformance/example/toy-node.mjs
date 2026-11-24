@@ -62,14 +62,15 @@ export function createNode({ store = createStore(), clock = { now: () => Date.no
   function audit(id, entry) { (store.audit.get(id) ?? store.audit.set(id, []).get(id)).push({ at: iso(now()), ...entry }); }
 
   function requestDecision({ kind, args = {}, title = kind, summary = '', preview, options, requester = 'mod:toy',
-    expires = null, onExpire = 'withdraw', defaultable, remoteApprove = false }) {
+    expires = null, onExpire = 'withdraw', defaultable, remoteApprove = false, inherit, followOf }) {
     const cat = catalogue.types[kind];
+    if (cat?.floor === 'inherit' && !inherit) throw new Refusal('invalid', { message: `${kind} inherits its floor and safety from another decision` });
     if (!cat?.decision && !V.has(kind) && !declaredKinds.includes(kind)) throw new Refusal('unknown_type');
     if (V.has(kind)) { const e = V.validate(kind, args); if (e.length) throw new Refusal('invalid', { message: e.join('; ') }); }
     if (kind === 'hitch.grant.issue@1' && args.kinds.some(SAFE_KINDS)) throw new Refusal('invalid', { message: 'grants may not cover safety kinds' });
-    const safety = cat?.safety ?? 'none';
+    const safety = inherit?.safety ?? cat?.safety ?? 'none';
     if (safety !== 'none' && (onExpire === 'fallback' || defaultable)) throw new Refusal('invalid', { message: 'safety kinds take no default' });
-    const floor = cat?.floor === 'vendor' || !cat ? 'local' : cat.floor;
+    const floor = inherit?.floor ?? (cat?.floor === 'vendor' || !cat ? 'local' : cat.floor);
     const narrow = new Set(cat?.narrowVerbs ?? ['decline']);
     options = (options ?? [{ verb: 'approve', label: 'Approve' }, { verb: 'decline', label: 'Decline' }]).map((o) => {
       const t = narrow.has(o.verb) ? 'narrow' : o.tier && tierRank(o.tier) > tierRank(floor) ? o.tier : floor;
@@ -83,6 +84,7 @@ export function createNode({ store = createStore(), clock = { now: () => Date.no
       bind: { alg: 'sha256/v1', hash: hashOf({ kind, args }) }, safety, audience: 'person', options, remoteApprove,
       urgency: 'normal', expires, onExpire, created: t, updated: t };
     if (defaultable) d.defaultable = defaultable;
+    if (followOf) d.followUpOf = followOf;
     store.decisions.set(id, { d, args });
     audit(id, { event: 'requested', by: requester });
     changed('decisions', id, 1, 'create', 'open');
@@ -114,19 +116,55 @@ export function createNode({ store = createStore(), clock = { now: () => Date.no
     }
   }
 
+  // The executor: re-check the bind, log "invoked" BEFORE the side effect,
+  // then report done. A hitch.retry@1 re-runs its original decision's args.
+  let crashNext = false; // test hook: the next execution dies after "invoked"
+  const LEASE_MS = 10 * 60_000;
   function execute(id) {
     const r = store.decisions.get(id);
-    store.executorCalls.set(id, (store.executorCalls.get(id) ?? 0) + 1);
-    if (hashOf({ kind: r.d.kind, args: r.args }) !== r.d.bind.hash) { r.d.action.state = 'failed'; return resolve(id, 'failed'); }
-    if (r.d.kind === 'hitch.client.pair@1') activatePairing(r.args);
-    if (r.d.kind === 'hitch.client.scope@1') {
-      const c = store.clients.get(r.args.client);
-      if (r.args.ceiling) c.ceiling = c.suite === 'hmac-sha256' && tierRank(r.args.ceiling) > tierRank('decide') ? 'decide' : r.args.ceiling;
-      if (r.args.privacy) c.privacy = r.args.privacy;
+    const target = r.d.kind === 'hitch.retry@1' ? store.decisions.get(r.args.decision) : r;
+    const want = target === r ? r.d.bind.hash : r.args.bindHash;
+    if (hashOf({ kind: target.d.kind, args: target.args }) !== want) { r.d.action = { ...r.d.action, state: 'failed' }; return resolve(id, 'failed'); }
+    store.executorCalls.set(target.d.id, (store.executorCalls.get(target.d.id) ?? 0) + 1);
+    r.d.action = { ...r.d.action, state: 'claimed', invokedAt: iso(now()), leaseUntil: iso(now() + LEASE_MS) };
+    audit(id, { event: 'action.invoked', target: target.d.id });
+    if (crashNext) { crashNext = false; return; } // died: no done is ever reported
+    if (target.d.kind === 'hitch.client.pair@1') activatePairing(target.args);
+    if (target.d.kind === 'hitch.client.scope@1') {
+      const c = store.clients.get(target.args.client);
+      if (target.args.ceiling) c.ceiling = c.suite === 'hmac-sha256' && tierRank(target.args.ceiling) > tierRank('decide') ? 'decide' : target.args.ceiling;
+      if (target.args.privacy) c.privacy = target.args.privacy;
       changed('clients', c.id, 2, 'update', 'active');
     }
+    audit(id, { event: 'action.done', ok: true });
     r.d.action = { ...r.d.action, state: 'applied' };
     resolve(id, 'applied');
+  }
+
+  // A lapsed lease after "invoked" with no done: the effect may or may not have
+  // happened. Never re-run it: resolve "uncertain" and ask the person.
+  function sweepLeases() {
+    for (const [id, r] of store.decisions) {
+      const a = r.d.action;
+      if (r.d.state !== 'answered' || a?.state !== 'claimed' || Date.parse(a.leaseUntil) > now()) continue;
+      if (bugs.autoRetry) { execute(id); continue; }
+      audit(id, { event: 'action.lease-expired' });
+      const target = r.d.kind === 'hitch.retry@1' ? store.decisions.get(r.args.decision) : r;
+      const chose = r.d.options.find((o) => o.verb === r.d.answered.verb);
+      const retry = requestDecision({ kind: 'hitch.retry@1', requester: 'node', followOf: id,
+        inherit: { floor: chose.tier, safety: target.d.safety },
+        title: `Did "${target.d.title}" happen?`,
+        summary: 'The executor started this action and never reported back. It may or may not have taken effect.',
+        args: { decision: target.d.id, kind: target.d.kind, verb: r.d.answered.verb, bindHash: target.d.bind.hash,
+          invokedAt: a.invokedAt, leaseUntil: a.leaseUntil, attempts: store.executorCalls.get(target.d.id) ?? 0 },
+        preview: [{ label: 'Decision', value: `${target.d.title} (${target.d.id})` }, { label: 'Kind', value: target.d.kind },
+          { label: 'Chosen', value: `${r.d.answered.verb} on ${r.d.answered.device ?? r.d.answered.by}` },
+          { label: 'Invoked', value: a.invokedAt }, { label: 'Lease ended', value: a.leaseUntil },
+          { label: 'Result', value: 'no done reported: unknown' }, { label: 'Runs so far', value: String(store.executorCalls.get(target.d.id) ?? 0) }],
+        options: [{ verb: 'retry', label: 'Run it again', tier: chose.tier }, { verb: 'decline', label: 'Leave it' }] });
+      r.d.action = { ...a, state: 'uncertain' };
+      resolve(id, 'uncertain', { followUp: retry });
+    }
   }
 
   // ---- auth ----------------------------------------------------------------------
@@ -186,7 +224,7 @@ export function createNode({ store = createStore(), clock = { now: () => Date.no
     try { a = JSON.parse(body); } catch { throw new Refusal('invalid'); }
     const errs = V.validate('hitch.answer@1', a);
     if (errs.length || a.decisionId !== id) throw new Refusal('invalid', { message: errs.join('; ') || 'decisionId mismatch' });
-    sweepExpiry();
+    sweepExpiry(); sweepLeases();
     const d = r.d;
     const opt = d.options.find((o) => o.verb === a.verb);
     if (!opt) throw new Refusal('invalid', { message: 'verb not offered' });
@@ -356,7 +394,7 @@ export function createNode({ store = createStore(), clock = { now: () => Date.no
     const path = url.pathname;
     onRequest?.({ method: req.method, path, query: url.search, body, at: Date.now() });
     try {
-      sweepExpiry();
+      sweepExpiry(); sweepLeases();
       if (req.method === 'GET' && path === '/.well-known/hitch') {
         return send(res, 200, { specs: [SPEC], impl: { name: 'toy-node', version: '0.1.0' }, aid, caps: ['sse', 'longpoll'],
           profiles: ['core', 'decisions', 'pairing', 'feeds', 'messaging'], suites: ['hmac-sha256', 'p256', 'ed25519'],
@@ -533,7 +571,7 @@ export function createNode({ store = createStore(), clock = { now: () => Date.no
     putContent: (bytes, type = 'text/plain; charset=utf-8', privacy = 'text') => {
       const b = Buffer.from(bytes); const h = 'sha256:' + createHash('sha256').update(b).digest('hex');
       store.content.set(h, { b, type, privacy }); return { hash: h, bytes: b.length };
-    }, answerAs: (p, id, body) => answer(p, id, body), withdraw: (id) => resolve(id, 'withdrawn'), addToken, addClient, revokeClient, issueGrant, trim, setFeed,
+    }, answerAs: (p, id, body) => answer(p, id, body), withdraw: (id) => resolve(id, 'withdrawn'), addToken, addClient, revokeClient, issueGrant, trim, setFeed, crashNextExecution: () => { crashNext = true; },
     resolveElsewhere: (id, where) => resolve(id, 'resolved-elsewhere', { answered: { verb: 'approve', by: 'app:herdr', at: iso(now()), where } }),
     executorCalls: (id) => store.executorCalls.get(id) ?? 0,
     publishAs: (principal, type, data) => emit(type, data, { from: { aid, principal } }),

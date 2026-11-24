@@ -333,6 +333,13 @@
       "owner": "kernel",
       "privacy": "meta",
       "feed": true
+    },
+    "hitch.retry@1": {
+      "owner": "hitch",
+      "privacy": "meta",
+      "decision": true,
+      "floor": "inherit",
+      "safety": "inherit"
     }
   },
   "patterns": {
