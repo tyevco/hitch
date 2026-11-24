@@ -2,12 +2,13 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://hitch.dev/types/outbox.send@1.schema.json",
   "title": "outbox.send@1 (decision kind, floor confirm, safety send): bound args",
-  "description": "Send an Outbox draft as the person (inventory O1, O2, O3). `send` is the connector driver's bindSend output, the exact bytes the connector sends (its text body by ref): Teams {body, path}, email {mail, to, subject, body|htmlSha}, GitHub {github, body, path}, Jira {jira, key, body, path} through connector-jira (hole A6). The executor re-checks it at claim. Preview rows, in order: To, Channel, Subject, Body. Options: approve 'Send' (confirm), sendBack needsText (decide, verbFloors), decline 'Discard' (narrow).",
+  "description": "Send an Outbox draft as the person (inventory O1, O2, O3). `send` is REQUIRED and is the bind: the connector driver's bindSend output, the exact bytes the connector sends (text bodies by ref), and each channel accepts only its own shape: teams {body, path} or {body, newChat}, email {mail, to, subject, body|htmlSha}, github {github, body, path}, jira {jira, key, body, path} through connector-jira (hole A6). The node derives the Channel preview row from `send`, never from the requester, and the executor re-checks `send` at claim. Preview rows, in order: To, Channel, Subject, Body. Options: approve 'Send' (confirm), sendBack needsText (decide, verbFloors), decline 'Discard' (narrow).",
   "type": "object",
   "required": [
     "channel",
     "to",
-    "body"
+    "body",
+    "send"
   ],
   "properties": {
     "channel": {
@@ -15,8 +16,7 @@
         "teams",
         "email",
         "github",
-        "jira",
-        "slack"
+        "jira"
       ]
     },
     "to": {
@@ -31,26 +31,65 @@
       "$ref": "hitch.defs.schema.json#/$defs/ref"
     },
     "send": {
-      "anyOf": [
-        {
-          "type": "object",
-          "required": [
-            "body",
-            "path"
-          ],
-          "properties": {
-            "body": {
-              "$ref": "hitch.defs.schema.json#/$defs/ref"
-            },
-            "path": {
-              "type": "string",
-              "maxLength": 400
-            }
-          },
-          "additionalProperties": false,
-          "description": "Teams"
+      "type": "object",
+      "description": "The connector driver's bindSend output: the bind, re-checked at claim"
+    },
+    "v2": {
+      "$ref": "hitch.defs.schema.json#/$defs/v2bridge"
+    }
+  },
+  "additionalProperties": false,
+  "anyOf": [
+    {
+      "properties": {
+        "channel": {
+          "const": "teams"
         },
-        {
+        "send": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [
+                "body",
+                "path"
+              ],
+              "properties": {
+                "body": {
+                  "$ref": "hitch.defs.schema.json#/$defs/ref"
+                },
+                "path": {
+                  "type": "string",
+                  "maxLength": 400
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "body",
+                "newChat"
+              ],
+              "properties": {
+                "body": {
+                  "$ref": "hitch.defs.schema.json#/$defs/ref"
+                },
+                "newChat": {
+                  "const": true
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        }
+      }
+    },
+    {
+      "properties": {
+        "channel": {
+          "const": "email"
+        },
+        "send": {
           "type": "object",
           "required": [
             "mail",
@@ -63,6 +102,7 @@
             },
             "to": {
               "type": "array",
+              "minItems": 1,
               "items": {
                 "type": "string",
                 "maxLength": 320
@@ -76,13 +116,20 @@
               "$ref": "hitch.defs.schema.json#/$defs/ref"
             },
             "htmlSha": {
-              "$ref": "hitch.defs.schema.json#/$defs/hash"
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
             }
           },
-          "additionalProperties": false,
-          "description": "email"
+          "additionalProperties": false
+        }
+      }
+    },
+    {
+      "properties": {
+        "channel": {
+          "const": "github"
         },
-        {
+        "send": {
           "type": "object",
           "required": [
             "github",
@@ -101,10 +148,16 @@
               "maxLength": 400
             }
           },
-          "additionalProperties": false,
-          "description": "GitHub"
+          "additionalProperties": false
+        }
+      }
+    },
+    {
+      "properties": {
+        "channel": {
+          "const": "jira"
         },
-        {
+        "send": {
           "type": "object",
           "required": [
             "jira",
@@ -128,14 +181,9 @@
               "maxLength": 400
             }
           },
-          "additionalProperties": false,
-          "description": "Jira, through connector-jira's bound send (hole A6): never the session's own Atlassian tools"
+          "additionalProperties": false
         }
-      ]
-    },
-    "v2": {
-      "$ref": "hitch.defs.schema.json#/$defs/v2bridge"
+      }
     }
-  },
-  "additionalProperties": false
+  ]
 }

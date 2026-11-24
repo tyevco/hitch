@@ -6,7 +6,7 @@ import { startMock } from './hitch-mock.mjs';
 
 const pause = (ms) => new Promise((r) => setTimeout(r, ms));
 const plain = { kind: 'wins.confirm@1', args: { win: 'w1', title: 'Shipped hitch-check' }, title: 'Log win: shipped hitch-check', summary: 'From the Friday sweep' };
-const sendKind = { kind: 'outbox.send@1', args: { channel: 'teams', to: 'Dana', body: { content: 'sha256:' + '0'.repeat(64), bytes: 0 } }, title: 'Send reply to Dana', summary: 'Re: Q4 plan' };
+const sendKind = { kind: 'outbox.send@1', args: { channel: 'teams', to: 'Dana', body: { content: 'sha256:' + '0'.repeat(64), bytes: 0 }, send: { body: { content: 'sha256:' + '0'.repeat(64), bytes: 0 }, path: '/chats/19:x/messages' } }, title: 'Send reply to Dana', summary: 'Re: Q4 plan' };
 
 export const CLIENT_CHECKS = [
   { id: 'generic-unknown-kind', title: 'an unknown vendor kind renders generically: title, effect, preview and options all visible',

@@ -15,7 +15,7 @@ function refused(r, code, why = '') {
   ok('hitch.refusal', r.body);
 }
 const plain = { kind: 'wins.confirm@1', args: { win: 'w1', title: 'Shipped hitch-check' } };       // decide, safety none
-const send = { kind: 'outbox.send@1', args: { channel: 'teams', to: 'Dana', body: { content: 'sha256:' + '0'.repeat(64), bytes: 0 } } };          // confirm, safety send
+const send = { kind: 'outbox.send@1', args: { channel: 'teams', to: 'Dana', body: { content: 'sha256:' + '0'.repeat(64), bytes: 0 }, send: { body: { content: 'sha256:' + '0'.repeat(64), bytes: 0 }, path: '/chats/19:x/messages' } } };          // confirm, safety send
 const local = { kind: 'kernel.settings.confirm@1', args: { key: 'x', value: true } }; // local
 
 // Each check: {id, profile, title, needs?: [adapter hooks], run(ctx)}
