@@ -58,7 +58,7 @@ The toy node's adapter, [`example/toy-adapter.mjs`](example/toy-adapter.mjs), is
 | decisions | decision-signed, not-a-client, decide-answer, tier, narrow-decline, send-back-below-floor, step-up, local-step-up, suite, stale, one-winner, answer-replay, answer-window, verb-offered, revoked, waits-forever, expiry-never-approves, no-safety-default, grant-safety, reaches-out-is-a-send, uncertain-never-reruns, uncertain-leave-it |
 | pairing | pairing-sas, pairing-impostor, pairing-commit, agent-bootstrap, pairing-approve, pairing-hmac-seal, pairing-presence, revoke-self, revoke-other, revoke-all (always runs last: it revokes the adapter's clients) |
 | feeds | feed-read, feed-changed, feed-guards |
-| tasks | item-verbs, item-verbs-guarded |
+| tasks | item-verbs, item-verbs-guarded, item-verbs-never-delete |
 | messaging | message-post, message-idem, message-person-only, message-session-scope, message-delivery, message-privacy |
 
 Not yet covered: push, relay, federation, privacy classes on events, the attention ladder, and the OS-dialog bootstrap (it needs a human). 

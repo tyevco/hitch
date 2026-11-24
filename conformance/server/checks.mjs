@@ -669,6 +669,27 @@ export const CHECKS = [
       refused(await ctx.as('clientDecide').post(`/hitch/v1/items/${id2}/state`, { verb: 'snooze' }), 'invalid', 'snooze without until:');
       assert.equal((await ctx.as('clientDecide').post(`/hitch/v1/items/${id}/state`, { verb: 'dismiss' })).body.state, 'dismissed');
     } },
+  { id: 'item-verbs-never-delete', profile: 'tasks', title: 'item verbs never delete: a dismissed or done item stays listed with its state, and a snoozed one returns to open when until passes', needs: ['putItem', 'advanceClock'],
+    async run(ctx) {
+      const c = ctx.as('clientDecide');
+      const gone = await ctx.adapter.putItem({ title: 'A review asked of you', offers: [{ verb: 'dismiss' }] });
+      const later = await ctx.adapter.putItem({ owner: 'tasks', title: 'Chase Dana', offers: [{ verb: 'done' }, { verb: 'snooze' }] });
+      await c.post(`/hitch/v1/items/${gone}/state`, { verb: 'dismiss' });
+      // until is in the node's time (its clock may run ahead of ours in a test): read it off the item
+      const nodeNow = Date.parse((await c.list('items')).body.list.find((x) => x.id === later).updated);
+      await c.post(`/hitch/v1/items/${later}/state`, { verb: 'snooze', until: new Date(nodeNow + 3600e3).toISOString() });
+      const all = (await c.list('items')).body.list;
+      assert.equal(all.find((x) => x.id === gone)?.state, 'dismissed', 'a dismissed item is still listed, with its state');
+      assert.equal(all.find((x) => x.id === later)?.state, 'snoozed');
+      const open = (await c.list('items', '?state=open')).body;
+      assert.ok(!open.list.some((x) => x.id === gone || x.id === later), 'Needs-you (state=open) hides them');
+      await ctx.adapter.advanceClock(2 * 3600e3);
+      const back = (await c.list('items')).body.list.find((x) => x.id === later);
+      assert.equal(back.state, 'open', 'a snoozed item comes back when until passes');
+      assert.equal(back.until, undefined);
+      const ev = (await c.poll(open.cursor)).body.events.find((e) => e.type === 'hitch.changed@1' && e.data.id === later && e.data.state === 'open');
+      assert.ok(ev, 'and its owner mod is told');
+    } },
 ];
 
 // A relaying impostor: forwards every request to the real node, rewriting JSON responses.

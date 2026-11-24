@@ -31,6 +31,8 @@ const PLANTED = {
   trustReachFlag: ['reaches-out-is-a-send'],
   keepAllowOnReach: ['reaches-out-is-a-send'],
   anyItemVerb: ['item-verbs-guarded'],
+  snoozeForever: ['item-verbs-never-delete'],
+  hideHandledItems: ['item-verbs-never-delete'],
   sasNoNodeKey: ['pairing-sas', 'pairing-impostor'],
 };
 for (const [bug, ids] of Object.entries(PLANTED)) {

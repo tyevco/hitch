@@ -286,6 +286,15 @@ export function createNode({ store = createStore(), clock = { now: () => Date.no
     changed('items', id, 1, 'create', 'open');
     return id;
   }
+  // A snoozed item comes back to open when its until passes; verbs never delete.
+  function sweepItems() {
+    if (bugs.snoozeForever) return;
+    for (const it of store.items.values()) {
+      if (it.state !== 'snoozed' || Date.parse(it.until) > now()) continue;
+      it.state = 'open'; delete it.until; it.rev++; it.updated = iso(now());
+      changed('items', it.id, it.rev, 'update', 'open');
+    }
+  }
   function itemState(p, id, body) {
     if (!p.client) throw new Refusal('not_a_client');
     const it = store.items.get(id);
@@ -439,7 +448,7 @@ export function createNode({ store = createStore(), clock = { now: () => Date.no
     const path = url.pathname;
     onRequest?.({ method: req.method, path, query: url.search, body, at: Date.now() });
     try {
-      sweepExpiry(); sweepLeases();
+      sweepExpiry(); sweepLeases(); sweepItems();
       if (req.method === 'GET' && path === '/.well-known/hitch') {
         return send(res, 200, { specs: [SPEC], impl: { name: 'toy-node', version: '0.1.0' }, aid, caps: ['sse', 'longpoll'],
           profiles: ['core', 'decisions', 'pairing', 'feeds', 'messaging', 'tasks'], suites: ['hmac-sha256', 'p256', 'ed25519'],
@@ -470,6 +479,7 @@ export function createNode({ store = createStore(), clock = { now: () => Date.no
       if (req.method === 'GET' && lm) {
         let list = lists[lm[1]](p);
         const st = url.searchParams.get('state'); if (st) list = list.filter((x) => x.state === st);
+        if (bugs.hideHandledItems && lm[1] === 'items' && !st) list = list.filter((x) => x.state === 'open');
         const k = url.searchParams.get('kind'); if (k) list = list.filter((x) => x.kind === k);
         if (lm[1] === 'decisions') list = list.map((d) => sign(viewFor(p, d)));
         return send(res, 200, { spec: SPEC, resource: lm[1], list, cursor: store.seq });
