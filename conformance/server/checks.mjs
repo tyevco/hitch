@@ -203,6 +203,17 @@ export const CHECKS = [
       assert.equal(r.body.outcome, 'declined');
       assert.equal(await adapter.executorCalls?.(id) ?? 0, 0, 'a decline never runs the executor');
     } },
+  { id: 'send-back-below-floor', profile: 'decisions', title: 'sendBack on a send is decide (it reaches nobody else) and runs nothing; approve stays confirm', needs: ['executorCalls'],
+    async run({ adapter, as }) {
+      const id = await adapter.requestDecision({ ...send, options: [{ verb: 'approve', label: 'Send' }, { verb: 'sendBack', label: 'Send back', needsText: true, maxText: 2000 }, { verb: 'decline' }] });
+      const d = (await as('clientDecide').decision(id)).body;
+      assert.equal(d.options.find((o) => o.verb === 'approve').tier, 'confirm');
+      assert.equal(d.options.find((o) => o.verb === 'sendBack').tier, 'decide', 'catalogue verbFloors {sendBack: decide}');
+      const r = await as('clientDecide').answer(id, 'sendBack', { text: 'Shorter, please' });
+      assert.equal(r.status, 200, JSON.stringify(r.body));
+      assert.equal(r.body.outcome, 'sent-back');
+      assert.equal(await adapter.executorCalls(id), 0, 'a send-back never runs the executor');
+    } },
   { id: 'step-up', profile: 'decisions', title: 'confirm without a presence proof gives step_up_required; with one it is accepted',
     async run({ adapter, as }) {
       const id = await adapter.requestDecision(send);
@@ -364,6 +375,19 @@ export const CHECKS = [
       assert.equal(d.outcome, 'uncertain');
       assert.equal((await as('clientDecide').answer(d.followUp, 'decline')).status, 200);
       assert.equal(await adapter.executorCalls(id), 1);
+    } },
+  { id: 'reaches-out-is-a-send', profile: 'decisions', title: 'a parley send that leaves the machine is a safety send at confirm, and a grant covers only the local ones', needs: ['issueGrant'],
+    async run({ adapter, url, aid, as }) {
+      const g = connect(url, aid, await adapter.issueGrant({ kinds: ['parley.send@1'] }));
+      const here = await adapter.requestDecision({ kind: 'parley.send@1', args: { to: 's-other' } });
+      const away = await adapter.requestDecision({ kind: 'parley.send@1', args: { to: 'aid:remote1' }, reachesOut: true });
+      const dh = (await g.decision(here)).body, da = (await g.decision(away)).body;
+      assert.equal(dh.safety, 'none'); assert.equal(dh.options.find((o) => o.verb === 'approve').tier, 'decide');
+      assert.equal(da.safety, 'send', 'reachesOut raises safety to send');
+      assert.equal(da.options.find((o) => o.verb === 'approve').tier, 'confirm', 'and the floor to confirm');
+      assert.equal((await g.answer(here, 'approve', { decision: dh })).status, 200, 'always-allow still covers a send on this machine');
+      refused(await g.answer(away, 'approve', { decision: da }), 'scope', 'a grant on a send that leaves the machine:');
+      refused(await as('clientDecide').answer(away, 'approve'), 'tier');
     } },
 
   // ---- pairing ------------------------------------------------------------------------

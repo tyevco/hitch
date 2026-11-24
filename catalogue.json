@@ -1,6 +1,6 @@
 {
   "spec": "hitch/1",
-  "description": "Initial catalogue. floor is the minimum answer tier (a mod may raise it, never lower it). safety != none: no grants, no default, no fallback. privacy is the node-set class for the type's data. kinds marked decision:true are decision kinds. Vendor kinds not listed default to floor local until a local decision assigns one.",
+  "description": "Initial catalogue. floor is the minimum answer tier (a mod may raise it, never lower it). safety != none: no grants, no default, no fallback. privacy is the node-set class for the type's data. kinds marked decision:true are decision kinds. verbFloors lowers the floor for named verbs that run no side effect (default {decline: narrow}); it never names the verb that executes. Vendor kinds not listed default to floor local until a local decision assigns one. reachesOut: when a decision of that kind reaches another machine (request flag reachesOut), floor and safety are raised to these values (Tyler, 2026-11-24: a parley send that leaves the machine is always a safety send).",
   "types": {
     "hitch.changed@1": {
       "owner": "hitch",
@@ -152,7 +152,10 @@
       "privacy": "text",
       "decision": true,
       "floor": "confirm",
-      "safety": "send"
+      "safety": "send",
+      "verbFloors": {
+        "sendBack": "decide"
+      }
     },
     "parley.send@1": {
       "owner": "parley",
@@ -160,7 +163,10 @@
       "decision": true,
       "floor": "decide",
       "safety": "none",
-      "reachesOut": "confirm"
+      "reachesOut": {
+        "floor": "confirm",
+        "safety": "send"
+      }
     },
     "parley.room.post@1": {
       "owner": "parley",
@@ -168,7 +174,10 @@
       "decision": true,
       "floor": "decide",
       "safety": "none",
-      "reachesOut": "confirm"
+      "reachesOut": {
+        "floor": "confirm",
+        "safety": "send"
+      }
     },
     "director.hire@1": {
       "owner": "director",
@@ -196,7 +205,10 @@
       "privacy": "text",
       "decision": true,
       "floor": "confirm",
-      "safety": "send"
+      "safety": "send",
+      "verbFloors": {
+        "sendBack": "decide"
+      }
     },
     "queue.question@1": {
       "owner": "queue",
@@ -204,9 +216,9 @@
       "decision": true,
       "floor": "confirm",
       "safety": "none",
-      "narrowVerbs": [
-        "deny"
-      ]
+      "verbFloors": {
+        "deny": "narrow"
+      }
     },
     "queue.permission@1": {
       "owner": "queue",
@@ -214,9 +226,9 @@
       "decision": true,
       "floor": "confirm",
       "safety": "none",
-      "narrowVerbs": [
-        "deny"
-      ]
+      "verbFloors": {
+        "deny": "narrow"
+      }
     },
     "queue.plan@1": {
       "owner": "queue",
@@ -224,9 +236,9 @@
       "decision": true,
       "floor": "confirm",
       "safety": "none",
-      "narrowVerbs": [
-        "deny"
-      ]
+      "verbFloors": {
+        "deny": "narrow"
+      }
     },
     "wins.confirm@1": {
       "owner": "wins",

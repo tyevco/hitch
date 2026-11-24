@@ -97,7 +97,7 @@ flowchart TD
 }
 ```
 
-**Initial catalogue.** Floors are the minimum tier. A mod can raise a tier, never lower it.
+**Initial catalogue.** Floors are the minimum tier. A mod can raise a tier, never lower it. The floor protects the verb that runs the side effect. Verbs that run nothing may sit lower, but only where the catalogue says so, in `verbFloors`: `decline` is `narrow` everywhere, `deny` is `narrow` on `queue.*`, and `sendBack` is `decide` on `report.send@1` and `outbox.send@1`, because sending text back to the agent reaches nobody else. `verbFloors` may name only `decline`, `deny`, `sendBack` or `discard`, never the verb that executes.
 
 | Type | Owner | Data sketch | Floor |
 |---|---|---|---|
@@ -121,7 +121,7 @@ flowchart TD
 | `kernel.agents.grant@1` | kernel | expose, grant, extend, quarantine | local |
 | `watch.merge@1` / `watch.deploy@1` / `watch.prready@1` | watch | PR or run ref | confirm |
 | `outbox.send@1` | outbox | draft `ref`, recipient resolved by the node | confirm |
-| `parley.send@1` / `parley.room.post@1` | parley | | decide (confirm if `reachesOut`) |
+| `parley.send@1` / `parley.room.post@1` | parley | **`reachesOut`** (it leaves this machine): floor confirm and **safety send**, so no grant, default or always-allow covers it (Tyler, 2026-11-24) | decide; reachesOut: confirm, safety send |
 | `director.hire@1` | director | | confirm |
 | `playbook.entry@1` | playbook | keep / keepRepo / edit / discard, bound to the content hash | decide |
 | `forms.submit@1` / `report.send@1` | forms / report | | decide / confirm |
@@ -172,7 +172,7 @@ flowchart TD
 
 **Expiry.** Optional, declared per kind. It resolves only to `expired` or `withdrawn`. **Safety kinds may not declare a default.** `hitch.question@1` may set `defaultable` (pairview `ask_default`), recorded as `fallback`. The node refuses that for safety kinds.
 
-**Grants.** A grant is created only by a `local` decision with presence. **It may never cover the safety kinds** (send, merge, deploy, signin, grant). Every use is appended as `answered{by:{grant}}` and `grant.used@1`, with per-hour and per-day caps. Herdr approver grants (a lead's `team_approve`) are **grant principals** that may answer `herdr-teams.hire@1` within scope.
+**Grants.** A grant is created only by a `local` decision with presence. **It may never cover the safety kinds** (send, merge, deploy, signin, grant). Safety is per decision, so a `parley.send@1` that reaches out is a send even where a grant covers that kind for sessions on this machine. Every use is appended as `answered{by:{grant}}` and `grant.used@1`, with per-hour and per-day caps. Herdr approver grants (a lead's `team_approve`) are **grant principals** that may answer `herdr-teams.hire@1` within scope.
 
 **Audit.** Decision and action subjects are **never compacted or trimmed**. Each answer records cid, transport, tier, presence-assertion id and hashes. Revoking a client keeps its history. Bodies go by ref, so text can be erased and leaves a tombstone. `GET /hitch/v1/decisions/:id/audit`.
 
@@ -272,7 +272,7 @@ flowchart TD
 
 **Closed refusal codes:** `not_a_client, tier, scope, step_up_required, stale, already, gone, withdrawn, expired, replay, revoked, gap, unknown_type, privacy, rate, suite, unauthenticated, invalid`. Each has a fixed HTTP status in [`codes.json`](codes.json).
 
-**The kit is built** (P0): [`types/`](types), [`codes.json`](codes.json), [`catalogue.json`](catalogue.json) and [`conformance/`](conformance/README.md): `hitch-check` (server, 52 checks over core, decisions, pairing, feeds and messaging), `hitch-client-check` with `hitch-mock` (client, 12 checks) and `hitch-catalog-check` (the `sdk:check` gate). The kit tests itself against an in-repo toy node and naive client, each with planted bugs that must turn their checks red. A Python stdlib client kit for pairview (`conformance/python/`) runs the same client checks over the hmac suite.
+**The kit is built** (P0): [`types/`](types), [`codes.json`](codes.json), [`catalogue.json`](catalogue.json) and [`conformance/`](conformance/README.md): `hitch-check` (server, 54 checks over core, decisions, pairing, feeds and messaging), `hitch-client-check` with `hitch-mock` (client, 12 checks) and `hitch-catalog-check` (the `sdk:check` gate). The kit tests itself against an in-repo toy node and naive client, each with planted bugs that must turn their checks red. A Python stdlib client kit for pairview (`conformance/python/`) runs the same client checks over the hmac suite.
 
 **Profiles:** `core` (required: discovery, hello, lists, events, pair), `decisions`, `feeds`, `messaging`, `tasks`, `push`, `relay`, `federation`. `/.well-known` may claim only the profiles that passed.
 
