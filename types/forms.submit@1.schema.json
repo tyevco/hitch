@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hitch.dev/types/forms.submit@1.schema.json",
+  "title": "forms.submit@1 (decision kind, floor decide, safety none): bound args",
+  "description": "A form to a teammate, sent through the team hub (inventory F1). The whole form is bound by ref. Preview rows, in order: To, Title, Form. Options: approve 'Send' (confirm), decline 'Discard' (narrow).",
+  "type": "object",
+  "required": [
+    "form",
+    "body"
+  ],
+  "properties": {
+    "form": {
+      "type": "string",
+      "maxLength": 120
+    },
+    "to": {
+      "type": "string",
+      "maxLength": 200
+    },
+    "title": {
+      "type": "string",
+      "maxLength": 200
+    },
+    "body": {
+      "$ref": "hitch.defs.schema.json#/$defs/ref"
+    },
+    "v2": {
+      "$ref": "hitch.defs.schema.json#/$defs/v2bridge"
+    }
+  },
+  "additionalProperties": false
+}

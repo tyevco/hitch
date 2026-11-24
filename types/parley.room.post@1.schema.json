@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hitch.dev/types/parley.room.post@1.schema.json",
+  "title": "parley.room.post@1 (decision kind, floor decide, safety none): bound args",
+  "description": "A room post held for the person (inventory P2): it goes to the team hub, so it is requested with reachesOut (safety send, confirm). Preview rows, in order: Room, Post. Options: approve 'Post it' (confirm), decline 'Drop it' (narrow).",
+  "type": "object",
+  "required": [
+    "post",
+    "text"
+  ],
+  "properties": {
+    "post": {
+      "type": "string",
+      "maxLength": 120
+    },
+    "room": {
+      "type": "string",
+      "maxLength": 200
+    },
+    "text": {
+      "$ref": "hitch.defs.schema.json#/$defs/ref"
+    },
+    "v2": {
+      "$ref": "hitch.defs.schema.json#/$defs/v2bridge"
+    }
+  },
+  "additionalProperties": false
+}

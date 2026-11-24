@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hitch.dev/types/playbook.entry@1.schema.json",
+  "title": "playbook.entry@1 (decision kind, floor decide, safety none): bound args",
+  "description": "A Playbook proposal (inventory PB1): the entry's text, which every agent in its reach reads, is bound by ref. Preview rows, in order: Who, Reach, Why, Entry. Options: approve 'Keep' (decide), approveRepo 'Keep for this repo' (decide), edit (decide, kindInput: needs an editor), decline 'Discard' (narrow).",
+  "type": "object",
+  "required": [
+    "proposal",
+    "text"
+  ],
+  "properties": {
+    "proposal": {
+      "type": "string",
+      "maxLength": 120
+    },
+    "reach": {
+      "type": "string",
+      "maxLength": 300
+    },
+    "text": {
+      "$ref": "hitch.defs.schema.json#/$defs/ref"
+    },
+    "v2": {
+      "$ref": "hitch.defs.schema.json#/$defs/v2bridge"
+    }
+  },
+  "additionalProperties": false
+}

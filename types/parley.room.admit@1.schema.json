@@ -26,6 +26,9 @@
         "type": "string",
         "maxLength": 80
       }
+    },
+    "v2": {
+      "$ref": "hitch.defs.schema.json#/$defs/v2bridge"
     }
   },
   "additionalProperties": false

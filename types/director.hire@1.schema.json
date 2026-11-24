@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hitch.dev/types/director.hire@1.schema.json",
+  "title": "director.hire@1 (decision kind, floor confirm, safety none): bound args",
+  "description": "A helper hire or a revive (inventory D1): it starts a Claude session with the person's permissions. Words in a prompt never approve one (D2). Preview rows, in order: Request, Where, Note, Why. Options: approve (confirm), approveSave 'Approve and save it' (confirm), decline 'Deny' (narrow).",
+  "type": "object",
+  "required": [
+    "request",
+    "why"
+  ],
+  "properties": {
+    "request": {
+      "type": "string",
+      "maxLength": 120
+    },
+    "role": {
+      "type": "string",
+      "maxLength": 200
+    },
+    "where": {
+      "type": "string",
+      "maxLength": 300
+    },
+    "why": {
+      "$ref": "hitch.defs.schema.json#/$defs/ref"
+    },
+    "v2": {
+      "$ref": "hitch.defs.schema.json#/$defs/v2bridge"
+    }
+  },
+  "additionalProperties": false
+}
