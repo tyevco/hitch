@@ -1,0 +1,141 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hitch.dev/types/outbox.send@1.schema.json",
+  "title": "outbox.send@1 (decision kind, floor confirm, safety send): bound args",
+  "description": "Send an Outbox draft as the person (inventory O1, O2, O3). `send` is the connector driver's bindSend output, the exact bytes the connector sends (its text body by ref): Teams {body, path}, email {mail, to, subject, body|htmlSha}, GitHub {github, body, path}, Jira {jira, key, body, path} through connector-jira (hole A6). The executor re-checks it at claim. Preview rows, in order: To, Channel, Subject, Body. Options: approve 'Send' (confirm), sendBack needsText (decide, verbFloors), decline 'Discard' (narrow).",
+  "type": "object",
+  "required": [
+    "channel",
+    "to",
+    "body"
+  ],
+  "properties": {
+    "channel": {
+      "enum": [
+        "teams",
+        "email",
+        "github",
+        "jira",
+        "slack"
+      ]
+    },
+    "to": {
+      "type": "string",
+      "maxLength": 320
+    },
+    "subject": {
+      "type": "string",
+      "maxLength": 300
+    },
+    "body": {
+      "$ref": "hitch.defs.schema.json#/$defs/ref"
+    },
+    "send": {
+      "anyOf": [
+        {
+          "type": "object",
+          "required": [
+            "body",
+            "path"
+          ],
+          "properties": {
+            "body": {
+              "$ref": "hitch.defs.schema.json#/$defs/ref"
+            },
+            "path": {
+              "type": "string",
+              "maxLength": 400
+            }
+          },
+          "additionalProperties": false,
+          "description": "Teams"
+        },
+        {
+          "type": "object",
+          "required": [
+            "mail",
+            "to",
+            "subject"
+          ],
+          "properties": {
+            "mail": {
+              "const": true
+            },
+            "to": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "maxLength": 320
+              }
+            },
+            "subject": {
+              "type": "string",
+              "maxLength": 300
+            },
+            "body": {
+              "$ref": "hitch.defs.schema.json#/$defs/ref"
+            },
+            "htmlSha": {
+              "$ref": "hitch.defs.schema.json#/$defs/hash"
+            }
+          },
+          "additionalProperties": false,
+          "description": "email"
+        },
+        {
+          "type": "object",
+          "required": [
+            "github",
+            "body",
+            "path"
+          ],
+          "properties": {
+            "github": {
+              "const": true
+            },
+            "body": {
+              "$ref": "hitch.defs.schema.json#/$defs/ref"
+            },
+            "path": {
+              "type": "string",
+              "maxLength": 400
+            }
+          },
+          "additionalProperties": false,
+          "description": "GitHub"
+        },
+        {
+          "type": "object",
+          "required": [
+            "jira",
+            "key",
+            "body",
+            "path"
+          ],
+          "properties": {
+            "jira": {
+              "const": true
+            },
+            "key": {
+              "type": "string",
+              "pattern": "^[A-Z][A-Z0-9_]+-[0-9]+$"
+            },
+            "body": {
+              "$ref": "hitch.defs.schema.json#/$defs/ref"
+            },
+            "path": {
+              "type": "string",
+              "maxLength": 400
+            }
+          },
+          "additionalProperties": false,
+          "description": "Jira, through connector-jira's bound send (hole A6): never the session's own Atlassian tools"
+        }
+      ]
+    },
+    "v2": {
+      "$ref": "hitch.defs.schema.json#/$defs/v2bridge"
+    }
+  },
+  "additionalProperties": false
+}

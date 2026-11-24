@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hitch.dev/types/queue.question@1.schema.json",
+  "title": "queue.question@1 (decision kind, floor confirm, safety none): bound args",
+  "description": "A Claude session's question (inventory Q1, Q2, hole A1). The question as its pane showed it is bound; a dialog's choice is pressed after the pane is read again and still shows it (paneanswer.mjs), and a typed answer reaches that chat only through the service, never from a store file. Preview rows, in order: Session, Project, Question, Choices (optional). Options: choose1..choose8, one per choice (confirm), answer needsText (confirm), decline 'Dismiss' (narrow); deny is narrow (verbFloors).",
+  "type": "object",
+  "required": [
+    "session",
+    "since",
+    "question"
+  ],
+  "properties": {
+    "session": {
+      "type": "string",
+      "maxLength": 120
+    },
+    "since": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "question": {
+      "$ref": "hitch.defs.schema.json#/$defs/ref"
+    },
+    "choices": {
+      "type": "array",
+      "maxItems": 8,
+      "items": {
+        "type": "string",
+        "maxLength": 120
+      }
+    },
+    "v2": {
+      "$ref": "hitch.defs.schema.json#/$defs/v2bridge"
+    }
+  },
+  "additionalProperties": false
+}

@@ -83,5 +83,5 @@ test('catalog-check (sdk:check) flags missing schemas, missing tiers and tiers b
   assert.deepEqual(check({ types: ['hitch.changed@1', 'work.started@1'], decisionKinds: ['wins.confirm@1'] }), []);
   const f = check({ types: ['acme.thing@1', 'Bad'], decisionKinds: ['acme.ask@1', 'outbox.send@1'], tiers: { 'outbox.send@1': 'decide' } });
   assert.deepEqual(f.map((x) => `${x.type}:${x.problem.split(' ')[0]}`).sort(),
-    ['Bad:bad', 'acme.ask@1:decision', 'acme.ask@1:no', 'acme.thing@1:no', 'outbox.send@1:no', 'outbox.send@1:tier'].sort());
+    ['Bad:bad', 'acme.ask@1:decision', 'acme.ask@1:no', 'acme.thing@1:no', 'outbox.send@1:tier'].sort());
 });

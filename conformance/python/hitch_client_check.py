@@ -82,7 +82,7 @@ class Mock:
 
 PLAIN = {"kind": "wins.confirm@1", "args": {"win": "w1", "title": "Shipped hitch-check"},
          "title": "Log win: shipped hitch-check", "summary": "From the Friday sweep"}
-SEND = {"kind": "outbox.send@1", "args": {"draft": 42}, "title": "Send reply to Dana", "summary": "Re: Q4 plan"}
+SEND = {"kind": "outbox.send@1", "args": {"channel": "teams", "to": "Dana", "body": {"content": "sha256:" + "0" * 64, "bytes": 0}}, "title": "Send reply to Dana", "summary": "Re: Q4 plan"}
 
 
 def _opt(v, verb):
