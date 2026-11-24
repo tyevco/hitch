@@ -35,15 +35,23 @@ export function check({ types = [], decisionKinds = [], schemaDirs = [], tiers =
     else if (floor && TIER.has(floor) && [...TIER].indexOf(tier) < [...TIER].indexOf(floor))
       findings.push({ type: k, problem: `tier ${tier} below the spec floor ${floor}` });
   }
+  // vendorPending: an owner outside this project writes the schema. Kept
+  // visible as a warning; it fails the gate only under strict.
+  for (const f of findings) if (catalogue.types[f.type]?.vendorPending && f.problem === 'no schema') f.warning = 'vendor-pending';
   return findings;
 }
+export const failing = (findings, { strict = false } = {}) => findings.filter((f) => strict || !f.warning);
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const i = process.argv.indexOf('--emitted');
-  if (i < 0 || !process.argv[i + 1]) { console.error('usage: hitch-catalog-check --emitted emitted.json'); process.exit(2); }
+  if (i < 0 || !process.argv[i + 1]) { console.error('usage: hitch-catalog-check --emitted emitted.json [--strict]'); process.exit(2); }
   const file = resolve(process.argv[i + 1]);
+  const strict = process.argv.includes('--strict');
   const f = check(JSON.parse(readFileSync(file, 'utf8')), resolve(file, '..'));
-  for (const x of f) console.log(`✗ ${x.type}: ${x.problem}`);
-  console.log(f.length ? `${f.length} finding(s)` : '✓ every emitted type has a schema and every decision kind a tier');
-  process.exit(f.length ? 1 : 0);
+  const bad = failing(f, { strict });
+  for (const x of f) console.log(`${bad.includes(x) ? '✗' : '!'} ${x.type}: ${x.problem}${x.warning ? ` (${x.warning})` : ''}`);
+  const warn = f.length - bad.length;
+  console.log(bad.length ? `${bad.length} finding(s)` : '✓ every emitted type has a schema and every decision kind a tier');
+  if (warn) console.log(`${warn} vendor-pending (not failing; --strict to fail on them)`);
+  process.exit(bad.length ? 1 : 0);
 }

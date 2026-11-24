@@ -1,6 +1,6 @@
 {
   "spec": "hitch/1",
-  "description": "Initial catalogue. floor is the minimum answer tier (a mod may raise it, never lower it). safety != none: no grants, no default, no fallback. privacy is the node-set class for the type's data. kinds marked decision:true are decision kinds. verbFloors lowers the floor for named verbs that run no side effect (default {decline: narrow}); it never names the verb that executes. Vendor kinds not listed default to floor local until a local decision assigns one. reachesOut: when a decision of that kind reaches another machine (request flag reachesOut), floor and safety are raised to these values (Tyler, 2026-11-24: a parley send that leaves the machine is always a safety send).",
+  "description": "Initial catalogue. floor is the minimum answer tier (a mod may raise it, never lower it). safety != none: no grants, no default, no fallback. privacy is the node-set class for the type's data. kinds marked decision:true are decision kinds. verbFloors lowers the floor for named verbs that run no side effect (default {decline: narrow}); it never names the verb that executes. Vendor kinds not listed default to floor local until a local decision assigns one. reachesOut: when a decision of that kind reaches another machine (request flag reachesOut), floor and safety are raised to these values (Tyler, 2026-11-24: a parley send that leaves the machine is always a safety send). vendorPending: the owner (not this project) writes the schema; catalog-check reports it as a warning that does not fail the gate unless --strict.",
   "types": {
     "hitch.changed@1": {
       "owner": "hitch",
@@ -281,49 +281,56 @@
       "privacy": "meta",
       "decision": true,
       "floor": "vendor",
-      "safety": "none"
+      "safety": "none",
+      "vendorPending": true
     },
     "herdr-teams.layoff@1": {
       "owner": "herdr-teams",
       "privacy": "meta",
       "decision": true,
       "floor": "vendor",
-      "safety": "none"
+      "safety": "none",
+      "vendorPending": true
     },
     "herdr-teams.leave@1": {
       "owner": "herdr-teams",
       "privacy": "meta",
       "decision": true,
       "floor": "vendor",
-      "safety": "none"
+      "safety": "none",
+      "vendorPending": true
     },
     "herdr-teams.return@1": {
       "owner": "herdr-teams",
       "privacy": "meta",
       "decision": true,
       "floor": "vendor",
-      "safety": "none"
+      "safety": "none",
+      "vendorPending": true
     },
     "herdr-teams.station@1": {
       "owner": "herdr-teams",
       "privacy": "meta",
       "decision": true,
       "floor": "vendor",
-      "safety": "none"
+      "safety": "none",
+      "vendorPending": true
     },
     "herdr-teams.run@1": {
       "owner": "herdr-teams",
       "privacy": "meta",
       "decision": true,
       "floor": "vendor",
-      "safety": "none"
+      "safety": "none",
+      "vendorPending": true
     },
     "herdr-teams.escalation@1": {
       "owner": "herdr-teams",
       "privacy": "meta",
       "decision": true,
       "floor": "vendor",
-      "safety": "none"
+      "safety": "none",
+      "vendorPending": true
     },
     "pairview.spawn@1": {
       "owner": "pairview",
@@ -331,7 +338,8 @@
       "decision": true,
       "floor": "vendor",
       "safety": "none",
-      "optional": true
+      "optional": true,
+      "vendorPending": true
     },
     "pairview.rule@1": {
       "owner": "pairview",
@@ -339,7 +347,8 @@
       "decision": true,
       "floor": "vendor",
       "safety": "none",
-      "optional": true
+      "optional": true,
+      "vendorPending": true
     },
     "kernel.connectors@1": {
       "owner": "kernel",
