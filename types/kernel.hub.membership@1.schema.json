@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hitch.dev/types/kernel.hub.membership@1.schema.json",
+  "title": "kernel.hub.membership@1 (decision kind, floor local, safety grant): bound args",
+  "description": "Join, move between or leave a team hub (inventory H5). Joining shares this machine's agents' presence with the team, so it is a grant-class change. Preview rows: Action, Hub, Team, As. Options: approve (local), decline (narrow).",
+  "type": "object",
+  "required": [
+    "op",
+    "hub"
+  ],
+  "properties": {
+    "op": {
+      "enum": [
+        "join",
+        "move",
+        "leave"
+      ]
+    },
+    "hub": {
+      "type": "string",
+      "maxLength": 300
+    },
+    "team": {
+      "type": "string",
+      "maxLength": 80
+    },
+    "login": {
+      "type": "string",
+      "maxLength": 80
+    }
+  },
+  "additionalProperties": false
+}

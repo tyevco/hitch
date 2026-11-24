@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hitch.dev/types/kernel.connector.signout@1.schema.json",
+  "title": "kernel.connector.signout@1 (decision kind, floor decide, safety none): bound args",
+  "description": "Sign a connector out, deleting its stored token (inventory K4, H2). Preview rows: Connector, Account. Options: approve (decide), decline (narrow). It only narrows what the kernel can do, so decide is enough.",
+  "type": "object",
+  "required": [
+    "connector"
+  ],
+  "properties": {
+    "connector": {
+      "type": "string",
+      "maxLength": 80
+    },
+    "account": {
+      "type": "string",
+      "maxLength": 200
+    }
+  },
+  "additionalProperties": false
+}

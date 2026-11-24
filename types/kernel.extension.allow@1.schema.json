@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hitch.dev/types/kernel.extension.allow@1.schema.json",
+  "title": "kernel.extension.allow@1 (decision kind, floor local, safety grant): bound args",
+  "description": "Allow a mod's background part whose code hash differs from the one allowed before (inventory K9, U1). The bind covers the exact code hash, so a part changed again after the ask is not allowed. Preview rows: Mod, Part, Version, Code hash, Was. Options: approve (local), decline (narrow).",
+  "type": "object",
+  "required": [
+    "mod",
+    "part",
+    "codeHash"
+  ],
+  "properties": {
+    "mod": {
+      "type": "string",
+      "maxLength": 40
+    },
+    "part": {
+      "type": "string",
+      "maxLength": 80
+    },
+    "version": {
+      "type": "string",
+      "maxLength": 40
+    },
+    "codeHash": {
+      "$ref": "hitch.defs.schema.json#/$defs/hash"
+    },
+    "previousHash": {
+      "$ref": "hitch.defs.schema.json#/$defs/hash"
+    }
+  },
+  "additionalProperties": false
+}

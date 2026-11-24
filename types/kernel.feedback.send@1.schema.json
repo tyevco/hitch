@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hitch.dev/types/kernel.feedback.send@1.schema.json",
+  "title": "kernel.feedback.send@1 (decision kind, floor confirm, safety send): bound args",
+  "description": "Send feedback about the mod pack to its team, with the option to file it as a GitHub issue instead (inventory K14). The body is bound by ref. Preview rows: To, Title, Body. Options: approve 'Send' (confirm), fileIssue 'File as an issue' (local), decline (narrow).",
+  "type": "object",
+  "required": [
+    "to",
+    "title",
+    "body"
+  ],
+  "properties": {
+    "to": {
+      "type": "string",
+      "maxLength": 200
+    },
+    "title": {
+      "type": "string",
+      "maxLength": 200
+    },
+    "body": {
+      "$ref": "hitch.defs.schema.json#/$defs/ref"
+    },
+    "repo": {
+      "type": "string",
+      "maxLength": 200
+    }
+  },
+  "additionalProperties": false
+}

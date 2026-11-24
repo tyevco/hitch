@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hitch.dev/types/watch.retry@1.schema.json",
+  "title": "watch.retry@1 (decision kind, floor decide, safety none): bound args",
+  "description": "Allow another try past a watch's retry cap (inventory W4; replaces the unauthenticated POST /reset, hole A2). Preview rows: Watch, What failed, Tries so far. Options: approve 'Try again' (decide), decline (narrow).",
+  "type": "object",
+  "required": [
+    "watch",
+    "attempts"
+  ],
+  "properties": {
+    "watch": {
+      "type": "string",
+      "maxLength": 200
+    },
+    "item": {
+      "type": "string",
+      "maxLength": 200
+    },
+    "cases": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "maxLength": 200
+      }
+    },
+    "attempts": {
+      "type": "integer",
+      "minimum": 0
+    }
+  },
+  "additionalProperties": false
+}

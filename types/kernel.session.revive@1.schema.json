@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hitch.dev/types/kernel.session.revive@1.schema.json",
+  "title": "kernel.session.revive@1 (decision kind, floor confirm, safety none): bound args",
+  "description": "Reopen ended Claude sessions with claude --resume (inventory K15, H8). A revived session acts as the person's agent again, so confirm. Preview rows: Sessions, Projects. Options: approve (confirm), decline (narrow).",
+  "type": "object",
+  "required": [
+    "sessions"
+  ],
+  "properties": {
+    "sessions": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 50,
+      "items": {
+        "type": "string",
+        "maxLength": 80
+      }
+    },
+    "projects": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "maxLength": 200
+      }
+    }
+  },
+  "additionalProperties": false
+}

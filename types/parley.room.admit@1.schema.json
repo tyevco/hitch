@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hitch.dev/types/parley.room.admit@1.schema.json",
+  "title": "parley.room.admit@1 (decision kind, floor local, safety grant): bound args",
+  "description": "Create, join or go live in a Messages room (inventory P5). A room lets other machines' agents reach this one's, so it is a grant-class change. The kill switch only narrows and needs no decision. Preview rows: Action, Room, Members. Options: approve (local), decline (narrow).",
+  "type": "object",
+  "required": [
+    "op",
+    "room"
+  ],
+  "properties": {
+    "op": {
+      "enum": [
+        "create",
+        "join",
+        "live"
+      ]
+    },
+    "room": {
+      "type": "string",
+      "maxLength": 120
+    },
+    "members": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "maxLength": 80
+      }
+    }
+  },
+  "additionalProperties": false
+}

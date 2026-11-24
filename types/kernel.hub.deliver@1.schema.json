@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hitch.dev/types/kernel.hub.deliver@1.schema.json",
+  "title": "kernel.hub.deliver@1 (decision kind, floor local, safety none): bound args",
+  "description": "A message held at the team hub boundary (inventory K13, H5, P4): deliver it to the agent, discard it, or block its sender. The body is shown by ref, so what is delivered is what was read. Preview rows: From, To, What, Body. Options: deliver (local), discard (narrow), block (narrow).",
+  "type": "object",
+  "required": [
+    "held",
+    "from",
+    "what",
+    "body"
+  ],
+  "properties": {
+    "held": {
+      "type": "string",
+      "maxLength": 80
+    },
+    "from": {
+      "type": "object",
+      "required": [
+        "login"
+      ],
+      "properties": {
+        "login": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "device": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "aid": {
+          "$ref": "hitch.defs.schema.json#/$defs/aid"
+        }
+      },
+      "additionalProperties": false
+    },
+    "to": {
+      "type": "string",
+      "maxLength": 200
+    },
+    "what": {
+      "enum": [
+        "message",
+        "form",
+        "post",
+        "answers"
+      ]
+    },
+    "body": {
+      "$ref": "hitch.defs.schema.json#/$defs/ref"
+    }
+  },
+  "additionalProperties": false
+}
