@@ -132,9 +132,106 @@ flowchart LR
 - **No retry into a new outcome.** A `failed` outcome stays failed; running it again takes a new decision (SPEC Decisions, step 7).
 - `action.invoked` is written and fsynced **before** the side effect. A crash between the two then shows as invoked-without-done, which is the case a person must look at, never a silent re-run.
 
+## Inventory: where v2 acts as the person, and what replaces each at P3
+
+Every path in v2 where a mod, a session, a hello token or a paired session's signature does something that needs the person. Each row names the Hitch decision kind (or retirement) that replaces it at P3, when mod pairings are frozen. Read from v2 at `39fbe4a6`; the agent-alone rows were spot-checked. **P3 exit check: every row's replacement exists and renders in the reference client before its v2 path is switched off** (SPEC P5: "each removal gated on its decision kind existing").
+
+How v2 does it today:
+- `sdk/user.ts:152` `userHeaders` signs **every** call from a paired session, except non-typed `asOrigin` commands and calls made while `vouchHeld` is set.
+- The kernel takes the person via `registry.isUser` (`kernel/registry.mjs:650`), which also still accepts old bearer pairings.
+- Dashboard presses run as the kernel's own calls through `webAction` (`kernel/services/actions.mjs:27`).
+
+In Hitch, a typed slash command in a session is **not** an answer. It points at the decision, and a paired client answers it; the CLI with Touch ID counts as one.
+
+### Kernel (Dashboard, notifications, menu bar: today kernel-own)
+
+| # | Acts as the person | Today | P3 replacement | Tier |
+|---|---|---|---|---|
+| K1 | Merge a PR | `actions.mjs:190` | `watch.merge@1` | confirm (safety merge) |
+| K2 | Approve or reject a deployment run | `actions.mjs:187`, `ext/watchtower/ci.mjs:111,130` | `watch.deploy@1` (reject = decline) | confirm / narrow |
+| K3 | PR ready or draft | `actions.mjs:204` | `watch.prready@1` | confirm |
+| K4 | Connector sign-in; sign-out | `actions.mjs:145-170` | `kernel.connector.signin@1`; **new** `kernel.connector.signout@1` | local; decide |
+| K5 | Schedule job add, update, approve, run | `actions.mjs:129-135` | `kernel.job.approve@1` (add and update options raised to local) | confirm; local |
+| K6 | Agents grant, extend, expose, unblock | `actions.mjs:125` | `kernel.agents.grant@1` | local |
+| K7 | Allow a mod pairing | `actions.mjs:87` | **retired**: mods never act as the person. Clients use `hitch.client.pair@1` | (local) |
+| K8 | Admit a third-party mod | `actions.mjs:88` | `kernel.mod.admit@1` | local |
+| K9 | Allow first-party code whose hash differs | `actions.mjs:96` | **new** `kernel.extension.allow@1` | local |
+| K10 | Set the default permission mode | `actions.mjs:124`, `services/hooks.mjs:124` | `kernel.permissions.mode@1` | local |
+| K11 | Apply a settings confirm | `actions.mjs:113`, `routes/settings.mjs:358` | `kernel.settings.confirm@1` | local |
+| K12 | Answer a session's permission prompt or question in its pane | `actions.mjs:74`, `paneanswer.mjs` | `queue.permission@1` / `queue.question@1`; the pane is re-checked against the bind at keypress | confirm (deny narrow) |
+| K13 | Release a held hub send; deliver a held incoming message; resume; move | `actions.mjs:77-85` | `kernel.hub.release@1`; **new** `kernel.hub.deliver@1` | confirm; local |
+| K14 | Send feedback; file it as a GitHub issue | `actions.mjs:109` | **new** `kernel.feedback.send@1` (filing the issue is an option raised to local) | confirm (safety send) |
+| K15 | Revive ended sessions | `actions.mjs:125` | **new** `kernel.session.revive@1` | confirm |
+| K16 | Approve a notifier topic | `actions.mjs:120` | `hitch.client.scope@1` (SPEC: notifier topics become client scopes) | local |
+| K17 | Claim a queued mod action (an outbox send gets a ticket) | `routes/actions.mjs:17-45`, `kernel/tickets.mjs` | the executor claims with a **kernel-minted credential**; a hello token never claims (seam 5) | — |
+| K18 | A paired session decides pairings | `routes/registry.mjs:67` | **removed**: `not_a_client` | — |
+| K19 | Hub approve or staged release with a paired signature | `routes/hub.mjs:336,345` | `kernel.hub.release@1` | confirm |
+
+### haystack-kernel hooks (typed commands and in-session dialogs, signed as the person)
+
+| # | Acts as the person | Today | P3 replacement | Tier |
+|---|---|---|---|---|
+| H1 | Schedule approve, deny, run; `/jobs` | `hooks/register.tsx:439-598` | `kernel.job.approve@1` | confirm |
+| H2 | Connector sign-in; store or delete a token secret | `register.tsx:784-1594` | `kernel.connector.signin@1` / `kernel.connector.signout@1` | local; decide |
+| H3 | Confirm a browser's Dashboard sign-in | `register.tsx:1687` | **retired at P7** with the Dashboard; until then `hitch.client.pair@1` | local |
+| H4 | LAN on or off, new certificate, passkey; sign devices out | `register.tsx:1716-1877` | `kernel.lan.access@1`; the revoke routes | local; per the revoke rules |
+| H5 | `/hub` join, move, leave, held-message decisions, grants; agents policy | `register.tsx:1886-1998` | **new** `kernel.hub.membership@1`; `kernel.hub.deliver@1`; `kernel.agents.grant@1` | local |
+| H6 | Push the person's own `/config` keys | `register.tsx:734` | `kernel.settings.confirm@1` | local |
+| H7 | Pick the to-do sink; install notify buttons or hookwait | `register.tsx:1403-1447` | `kernel.settings.confirm@1` | local |
+| H8 | `/agents revive` | `hooks/sessions.tsx:25` | `kernel.session.revive@1` | confirm |
+
+### Mods
+
+| # | Mod | Acts as the person | Today | P3 replacement | Tier |
+|---|---|---|---|---|---|
+| W1 | watchtower | Merge from the ready dialog or a pane button | `watchtower/hooks/register.tsx:1209,1948` → `ext/watchtower/routes.mjs:379` | `watch.merge@1` | confirm |
+| W2 | watchtower | Unwatch | `register.tsx:1234,1976` | it only narrows, so it stays the mod's own action; **no paired signature** | — |
+| W3 | watchtower | Push its config keys | `register.tsx:1309` | `kernel.settings.confirm@1` | local |
+| W4 | watchtower | Reset the retry cap ("Approve another try") | `POST /reset`, **unauthenticated**, `routes.mjs:351` | **new** `watch.retry@1`; the route takes a credential | decide |
+| O1 | outbox | Send a Teams message or PR comment, or make an Outlook draft | `outbox/hooks/register.tsx:585-6021` (`writeAuth`) | `outbox.send@1`, with the bind over the driver's `bindSend` bytes | confirm (safety send) |
+| O2 | outbox | The Dashboard's queued Send | `register.tsx:4606,4797` + ticket | `outbox.send@1` → executor → ticket at claim | confirm |
+| O3 | outbox | **Jira comment through the session's own Atlassian MCP** | `register.tsx:1141,1197`; the kernel never sees it, and `connector-jira/driver.mjs:84` `gateWrite` lets every write through | `outbox.send@1` through the **kernel's** Jira connector, with a real `gateWrite`. The session-MCP path is removed | confirm |
+| O4 | outbox / report | Finish the Weekly Report → Outlook draft | `register.tsx:5468,5586,4079` | `report.send@1` | confirm |
+| O5 | outbox | Microsoft sign-in; background token refresh writes secrets | `register.tsx:713-718,471` | `kernel.connector.signin@1`. The refresh runs as the daemon's connector executor (P6), with no person signature | local |
+| P1 | parley | Approve a draft → hub send, with the person's approval signed | `parley/hooks/register.tsx:680-693,2314,2344` | `parley.send@1` | decide, confirm if it reaches out |
+| P2 | parley | "Say" in the person's words; room post | `register.tsx:1101,1865,2565` | `parley.send@1` / `parley.room.post@1` | confirm |
+| P3 | parley | "Approve and always allow" → hub policy grant | `register.tsx:3410,851` | `hitch.grant.issue@1`, **refused when it reaches out** (see open question 5) | local |
+| P4 | parley | Deliver, discard or block a held incoming message | `register.tsx:2196,3548` | `kernel.hub.deliver@1` | local |
+| P5 | parley | Create, join or go live in a room; the kill switch | `register.tsx:3493,2544,2088,1840,4726` | **new** `parley.room.admit@1`. The kill switch only narrows: no decision | local |
+| F1 | forms | Submit, decline, or send through the hub | `forms/hooks/register.tsx:391-777` | `forms.submit@1` (send raised to confirm) | decide; confirm |
+| D1 | director | Approve a hire → open a Terminal or revive a session | `director/hooks/register.tsx:643,667,1030,1639,2149,2228` | `director.hire@1` | confirm |
+| D2 | director | **`director_approve` tool approves when the typed prompt says "approve #N"** | `register.tsx:580-606` | **removed**: words in a prompt are not consent. A client answers `director.hire@1` | confirm |
+| Q1 | queue | Inbox pane decisions | `queue/hooks/register.tsx:465` | `queue.*@1` | confirm (deny narrow) |
+| Q2 | queue | Answer a waiting question **as the person's words** (`asUser`) | `register.tsx:305-326,768` | `queue.question@1`, answered by a client. The `asUser` channel from the store file is removed | confirm |
+| T1 | tasks | Queued nudge, discuss, bring (text typed into sessions) | `tasks/hooks/register.tsx:2654` | **retired**: Hitch never prompts (Principle 2). The person writes with `POST /messages` | — |
+| R1 | report | Finish (stages in Outbox), research | `report/hooks/register.tsx:1775` | `report.send@1` | confirm |
+| WI1 | wins | Sweep: a prompt sent to every agent | `wins/hooks/register.tsx:1270,1342` | **retired** (sweeps are gone) | — |
+| PB1 | playbook | Keep or keepRepo (its own approval key) | `playbook/hooks/register.tsx:917,960` | `playbook.entry@1` | decide |
+| U1 | updates | Reload every session's mods with a paired signature | `updates/hooks/register.tsx:309` | kernel maintenance with **no person signature**; changed code goes through `kernel.extension.allow@1` | — |
+
+### What an agent can trigger alone today, and what closes it
+
+| # | Hole (verified) | Closed at P3 by |
+|---|---|---|
+| A1 | **Queue reply forgery.** An agent writes a reply signal into the queue store file, and the target session submits it as the person's words (`queue/hooks/register.tsx:326`) | `queue.question@1` answered only by a paired client; the `asUser` path is deleted |
+| A2 | **`POST /reset` with no credential** clears a watch's retry cap (`ext/watchtower/routes.mjs:351`) | `watch.retry@1`; the route takes a credential |
+| A3 | **A forged first-party hello** passes poll, claim and done for that mod's queued actions (`kernel/routes/actions.mjs:18`) | only a kernel-minted executor credential claims; outcomes come from the executor log (seam 5) |
+| A4 | **Tokenless legacy fallbacks**: `olderCaller` (`routes/actions.mjs:19`), `mayHubShim`, `mayConnect`, `/inbox/act` when absent | refused on every `/hitch/v1` route. The v2 fallbacks are deleted when their decision kinds exist |
+| A5 | **Bearer pairings** still accepted as `x-cx-user` (`registry.mjs:650`); capturable by a socket relay | frozen at P3 and never accepted on `/hitch/v1`; deleted at P7 |
+| A6 | **Jira writes** bypass the kernel (O3), and `connector-jira` `gateWrite` allows everything (`driver.mjs:84`) | `outbox.send@1` through the kernel connector, with a real `gateWrite` |
+| A7 | **Parley trusted pairs** send with no click under "always allow" | the existing trust stays the person's grant, but no new grant may cover a send that reaches out (open question 5) |
+| A8 | **Wins** are logged without the person's confirmation (`wins/hooks/register.tsx:930`, off by default) | `wins.confirm@1` exists; whether confirming is on by default is **Tyler's call** (open question 6) |
+| A9 | **Paired sessions sign from timers** (`outbox:471` refresh, `updates:309` reload) | paired signatures are gone; background work runs as daemon executors |
+
+### Kinds this adds to the catalogue
+
+`kernel.connector.signout@1` (decide), `kernel.extension.allow@1` (local), `kernel.hub.deliver@1` (local), `kernel.hub.membership@1` (local), `kernel.feedback.send@1` (confirm, safety send), `kernel.session.revive@1` (confirm), `watch.retry@1` (decide), `parley.room.admit@1` (local). They are in `catalogue.json` now. Their arg schemas are owed by the Haystack seat that builds each one, and `hitch-catalog-check` stays red until they exist, which is the gate working.
+
 ## Open questions
 
 1. ~~Kid format~~: decided and landed (`node:<aid>:<fp>`).
-2. **Mod pairings never become clients.** This follows SPEC Principle 3, but some first-party mods may rely on acting as the person today. Their read paths need an inventory before P3 freezes them.
+2. ~~Mod pairings never become clients~~: decided. The inventory above lists every path that relies on them and what replaces it.
 3. **Audit size and archive at 12 months.** These are estimates; check against a week of real decision counts once P3 runs.
 4. ~~Duplicate-run policy~~: decided. Nothing re-runs automatically; the outcome is `uncertain` and a `hitch.retry@1` decision is raised.
+5. **Parley sends that reach out, and grants.** `parley.send@1` is `safety: none` in the catalogue, so a grant may cover it, even when it reaches another person's machine. I recommend safety `send` whenever `reachesOut`: no grant, and confirm. That would end v2's "always allow" for messages that leave the machine.
+6. **Wins confirmation by default** (A8): today an agent's win is logged unconfirmed. The wins feed Sam's recap, so this is Tyler's call.

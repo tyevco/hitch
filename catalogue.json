@@ -340,6 +340,62 @@
       "decision": true,
       "floor": "inherit",
       "safety": "inherit"
+    },
+    "kernel.connector.signout@1": {
+      "owner": "kernel",
+      "privacy": "meta",
+      "decision": true,
+      "floor": "decide",
+      "safety": "none"
+    },
+    "kernel.extension.allow@1": {
+      "owner": "kernel",
+      "privacy": "meta",
+      "decision": true,
+      "floor": "local",
+      "safety": "grant"
+    },
+    "kernel.hub.deliver@1": {
+      "owner": "kernel",
+      "privacy": "meta",
+      "decision": true,
+      "floor": "local",
+      "safety": "none"
+    },
+    "kernel.hub.membership@1": {
+      "owner": "kernel",
+      "privacy": "meta",
+      "decision": true,
+      "floor": "local",
+      "safety": "grant"
+    },
+    "kernel.feedback.send@1": {
+      "owner": "kernel",
+      "privacy": "meta",
+      "decision": true,
+      "floor": "confirm",
+      "safety": "send"
+    },
+    "kernel.session.revive@1": {
+      "owner": "kernel",
+      "privacy": "meta",
+      "decision": true,
+      "floor": "confirm",
+      "safety": "none"
+    },
+    "watch.retry@1": {
+      "owner": "watch",
+      "privacy": "meta",
+      "decision": true,
+      "floor": "decide",
+      "safety": "none"
+    },
+    "parley.room.admit@1": {
+      "owner": "parley",
+      "privacy": "meta",
+      "decision": true,
+      "floor": "local",
+      "safety": "grant"
     }
   },
   "patterns": {
