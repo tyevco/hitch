@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hitch.dev/types/hitch.person.policy.set.schema.json",
+  "title": "person op policy.set: the agent policy",
+  "type": "object",
+  "required": [
+    "entries"
+  ],
+  "properties": {
+    "entries": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "type": "object",
+        "required": [
+          "project",
+          "who"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "project": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "who": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "teams": {
+                "type": "array",
+                "maxItems": 50,
+                "items": {
+                  "type": "string",
+                  "maxLength": 120
+                }
+              },
+              "logins": {
+                "type": "array",
+                "maxItems": 200,
+                "items": {
+                  "type": "string",
+                  "maxLength": 80
+                }
+              },
+              "none": {
+                "type": "boolean"
+              }
+            }
+          },
+          "handoffs": {
+            "type": "boolean"
+          }
+        }
+      }
+    }
+  },
+  "additionalProperties": false
+}

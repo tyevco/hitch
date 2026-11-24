@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hitch.dev/types/hitch.person.rooms.create.schema.json",
+  "title": "person op rooms.create: create a room",
+  "type": "object",
+  "required": [
+    "room"
+  ],
+  "properties": {
+    "room": {
+      "type": "string",
+      "maxLength": 120
+    },
+    "members": {
+      "type": "array",
+      "maxItems": 50,
+      "items": {
+        "type": "string",
+        "maxLength": 120
+      }
+    },
+    "topic": {
+      "type": "string",
+      "maxLength": 300
+    }
+  },
+  "additionalProperties": false
+}

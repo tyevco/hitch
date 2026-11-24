@@ -1,0 +1,9 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hitch.dev/types/hitch.person.hub.open.schema.json",
+  "title": "person op hub.open: open the team hub page",
+  "type": "object",
+  "required": [],
+  "properties": {},
+  "additionalProperties": false
+}

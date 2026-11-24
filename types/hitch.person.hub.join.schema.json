@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hitch.dev/types/hitch.person.hub.join.schema.json",
+  "title": "person op hub.join: join a team hub",
+  "type": "object",
+  "required": [
+    "invite"
+  ],
+  "properties": {
+    "invite": {
+      "type": "string",
+      "maxLength": 4096
+    },
+    "name": {
+      "type": "string",
+      "maxLength": 80
+    }
+  },
+  "additionalProperties": false
+}

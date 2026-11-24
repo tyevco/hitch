@@ -455,6 +455,13 @@
       "decision": true,
       "floor": "local",
       "safety": "grant"
+    },
+    "kernel.updates.reload@1": {
+      "owner": "kernel",
+      "privacy": "meta",
+      "decision": true,
+      "floor": "decide",
+      "safety": "none"
     }
   },
   "patterns": {
@@ -479,6 +486,121 @@
       ],
       "testOnly": true,
       "description": "Conformance only: echoes text, reports the secret's length. A node enables it only under its test adapter."
+    },
+    "connectors.login": {
+      "tier": "local",
+      "schema": "hitch.person.connectors.login",
+      "secret": [],
+      "closes": [
+        "kernel.connector.signin@1"
+      ],
+      "description": "Start a connector's sign-in as the person (its oauth or device flow, run by the node; the client opens the URL or shows the code it answers). Closes a session's kernel.connector.signin@1 named in `for`."
+    },
+    "connectors.secret": {
+      "tier": "local",
+      "schema": "hitch.person.connectors.secret",
+      "secret": [
+        "value"
+      ],
+      "closes": [
+        "kernel.connector.signin@1"
+      ],
+      "description": "Store a token or app secret the person pastes (a token connector, an Outbox sign-in app's secret) in the OS store, straight from the client to the node: never through a session or a decision. `value` is secret."
+    },
+    "connectors.logout": {
+      "tier": "local",
+      "schema": "hitch.person.connectors.logout",
+      "secret": [],
+      "closes": [],
+      "description": "Sign a connector out as the person (its stored secret deleted)."
+    },
+    "reload": {
+      "tier": "decide",
+      "schema": "hitch.person.reload",
+      "secret": [],
+      "closes": [
+        "kernel.updates.reload@1"
+      ],
+      "description": "Restart the installed mods' background parts and the service's reloadable code (no new code is fetched). Closes a session's kernel.updates.reload@1 named in `for`."
+    },
+    "dashboard.link": {
+      "tier": "local",
+      "schema": "hitch.person.dashboard.link",
+      "secret": [],
+      "closes": [],
+      "description": "A one-time link that signs a browser into the Dashboard (loopback only). Local: until it mints a read-only link (scope read, from P5) the Dashboard carries kernel-own power. The result carries the URL, privacy text."
+    },
+    "hub.join": {
+      "tier": "local",
+      "schema": "hitch.person.hub.join",
+      "secret": [
+        "invite"
+      ],
+      "closes": [],
+      "description": "Join this machine to a team hub with an invite the person holds."
+    },
+    "hub.leave": {
+      "tier": "local",
+      "schema": "hitch.person.hub.leave",
+      "secret": [],
+      "closes": [],
+      "description": "Take this machine off its team hub."
+    },
+    "hub.move": {
+      "tier": "local",
+      "schema": "hitch.person.hub.move",
+      "secret": [],
+      "closes": [],
+      "description": "Move this machine to another team hub address the person names."
+    },
+    "hub.confirm": {
+      "tier": "local",
+      "schema": "hitch.person.hub.confirm",
+      "secret": [],
+      "closes": [],
+      "description": "Confirm the team hub address this machine dials (its link, after a change the person checked)."
+    },
+    "hub.open": {
+      "tier": "decide",
+      "schema": "hitch.person.hub.open",
+      "secret": [],
+      "closes": [],
+      "description": "A one-time link that signs a browser into the team hub's page."
+    },
+    "policy.set": {
+      "tier": "local",
+      "schema": "hitch.person.policy.set",
+      "secret": [],
+      "closes": [],
+      "description": "The person's agent policy: which teammates' agents may reach which of their projects over the team hub (inbound exposure), entry by entry. It grants no decision and no always-allow: an entry can't let anything answer a safety kind or send from this machine (the node refuses any field beyond the shape)."
+    },
+    "sinks.pick": {
+      "tier": "local",
+      "schema": "hitch.person.sinks.pick",
+      "secret": [],
+      "closes": [],
+      "description": "Pick the to-do sink the mods file to: one of the installed sinks, which the node checks (a sink may be an outside service, so local)."
+    },
+    "rooms.create": {
+      "tier": "local",
+      "schema": "hitch.person.rooms.create",
+      "secret": [],
+      "closes": [],
+      "description": "Create a team hub room of the person's, with its members. Room posts stay held decisions (parley.room.post@1)."
+    },
+    "rooms.live": {
+      "tier": "local",
+      "schema": "hitch.person.rooms.live",
+      "secret": [],
+      "closes": [],
+      "description": "Turn a room's live delivery on or off. Room posts stay held decisions (parley.room.post@1)."
+    },
+    "rooms.join": {
+      "tier": "local",
+      "schema": "hitch.person.rooms.join",
+      "secret": [],
+      "closes": [],
+      "description": "Join a room on the team hub as one of the person's projects. Room posts stay held decisions (parley.room.post@1)."
     }
   }
 }

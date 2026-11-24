@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hitch.dev/types/hitch.person.rooms.live.schema.json",
+  "title": "person op rooms.live: a room's live delivery",
+  "type": "object",
+  "required": [
+    "room",
+    "on"
+  ],
+  "properties": {
+    "room": {
+      "type": "string",
+      "maxLength": 120
+    },
+    "on": {
+      "type": "boolean"
+    }
+  },
+  "additionalProperties": false
+}

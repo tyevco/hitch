@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hitch.dev/types/hitch.person.connectors.logout.schema.json",
+  "title": "person op connectors.logout: sign a connector out",
+  "type": "object",
+  "required": [
+    "connector"
+  ],
+  "properties": {
+    "connector": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]{0,63}$"
+    },
+    "account": {
+      "type": "string",
+      "maxLength": 320
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hitch.dev/types/hitch.person.hub.confirm.schema.json",
+  "title": "person op hub.confirm: confirm the hub address",
+  "type": "object",
+  "required": [],
+  "properties": {
+    "address": {
+      "type": "string",
+      "maxLength": 500
+    }
+  },
+  "additionalProperties": false
+}

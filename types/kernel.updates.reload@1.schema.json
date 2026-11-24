@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hitch.dev/types/kernel.updates.reload@1.schema.json",
+  "title": "kernel.updates.reload@1 (decision kind, floor decide, safety none): bound args",
+  "description": "A session's /updates reload asks the person to reload what is installed (Haystack P5): it restarts only code already installed, so decide. Its answer is the client's own person op `reload` with `for` this decision. Preview rows: Asked by, Why. Options: open in client (kindInput), decline (narrow).",
+  "type": "object",
+  "required": [
+    "session"
+  ],
+  "properties": {
+    "session": {
+      "type": "string",
+      "maxLength": 120
+    },
+    "why": {
+      "type": "string",
+      "maxLength": 300
+    },
+    "v2": {
+      "$ref": "hitch.defs.schema.json#/$defs/v2bridge"
+    }
+  },
+  "additionalProperties": false
+}

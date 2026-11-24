@@ -1,0 +1,9 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hitch.dev/types/hitch.person.hub.leave.schema.json",
+  "title": "person op hub.leave: leave the team hub",
+  "type": "object",
+  "required": [],
+  "properties": {},
+  "additionalProperties": false
+}
