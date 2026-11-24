@@ -423,6 +423,31 @@
       "privacy": "meta",
       "item": true,
       "transitional": "P7"
+    },
+    "outbox.provider.send@1": {
+      "owner": "outbox",
+      "privacy": "text",
+      "decision": true,
+      "floor": "confirm",
+      "safety": "send",
+      "verbFloors": {
+        "sendBack": "decide"
+      }
+    },
+    "tasks.todo@1": {
+      "owner": "tasks",
+      "privacy": "meta",
+      "item": true
+    },
+    "watch.stacked@1": {
+      "owner": "watch",
+      "privacy": "meta",
+      "item": true
+    },
+    "watch.review@1": {
+      "owner": "watch",
+      "privacy": "meta",
+      "item": true
     }
   },
   "patterns": {

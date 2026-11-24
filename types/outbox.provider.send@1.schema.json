@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hitch.dev/types/outbox.provider.send@1.schema.json",
+  "title": "outbox.provider.send@1 (decision kind, floor confirm, safety send): bound args",
+  "description": "Send an Outbox draft on a channel a provider mod sends (inventory O6, Haystack P5): its manifest provides `outbox.channel:<name>`, and no first-party connector binds it. `provider` is REQUIRED and bound: the mod id whose `send` rpc sends it, so another provider of the same channel can't take the send. The bind is the draft as the Outbox shows it, `to`, `subject`, `body` by ref and `seen` (the Outbox's version of the draft), re-checked at claim; the executor hands exactly the bound {to, subject, body} to that provider's send. Preview rows: To, Channel, Provider, Subject, Body. Options: approve 'Send' (confirm), sendBack needsText (decide, verbFloors), decline 'Discard' (narrow).",
+  "type": "object",
+  "required": [
+    "channel",
+    "provider",
+    "to",
+    "body"
+  ],
+  "properties": {
+    "channel": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]{0,39}$"
+    },
+    "provider": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]{0,63}$"
+    },
+    "to": {
+      "type": "string",
+      "maxLength": 320
+    },
+    "subject": {
+      "type": "string",
+      "maxLength": 300
+    },
+    "body": {
+      "$ref": "hitch.defs.schema.json#/$defs/ref"
+    },
+    "seen": {
+      "type": "string",
+      "maxLength": 80
+    },
+    "v2": {
+      "$ref": "hitch.defs.schema.json#/$defs/v2bridge"
+    }
+  },
+  "additionalProperties": false
+}

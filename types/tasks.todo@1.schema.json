@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hitch.dev/types/tasks.todo@1.schema.json",
+  "title": "tasks.todo@1 (item kind): data",
+  "description": "A to-do that waits on the person (inventory T2, Haystack P5): urgent (a P1), an overdue wait on someone outside, or its ticket finished. Attention, not consent: it offers done and snooze (the client computes until, e.g. tomorrow 9am); Later is client-local. Changing the wait itself is the To-dos mod's, in a full client.",
+  "type": "object",
+  "required": [
+    "task",
+    "why"
+  ],
+  "properties": {
+    "task": {
+      "type": "string",
+      "maxLength": 40
+    },
+    "why": {
+      "enum": [
+        "urgent",
+        "overdue",
+        "ticketdone"
+      ]
+    },
+    "waitingOn": {
+      "type": "string",
+      "maxLength": 200
+    },
+    "ticket": {
+      "type": "string",
+      "maxLength": 200
+    },
+    "priority": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 3
+    },
+    "v2id": {
+      "type": "string",
+      "maxLength": 200
+    }
+  },
+  "additionalProperties": false
+}

@@ -191,11 +191,14 @@ In Hitch, a typed slash command in a session is **not** an answer. It points at 
 | W2 | watchtower | Unwatch | `register.tsx:1234,1976` | it only narrows, so it stays the mod's own action; **no paired signature** | — |
 | W3 | watchtower | Push its config keys | `register.tsx:1309` | `kernel.settings.confirm@1` | local |
 | W4 | watchtower | Reset the retry cap ("Approve another try") | `POST /reset`, **unauthenticated**, `routes.mjs:351` | **new** `watch.retry@1`; the route takes a credential | decide |
+| W5 | watchtower | A stacked PR's "land the chain as one PR" note (Haystack P5) | `watchtower/hooks/register.tsx` dialog, `daemon/inbox.mjs` merge item with no Merge | **new** item `watch.stacked@1`, offers dismiss | narrow (item verb) |
+| W6 | watchtower | A review requested of the person (Haystack P5) | `register.tsx` dialog, `daemon/inbox.mjs` review item | **new** item `watch.review@1`, offers dismiss; the review itself is on its pull request | narrow (item verb) |
 | O1 | outbox | Send a Teams message or PR comment, or make an Outlook draft | `outbox/hooks/register.tsx:585-6021` (`writeAuth`) | `outbox.send@1`, with the bind over the driver's `bindSend` bytes | confirm (safety send) |
 | O2 | outbox | The Dashboard's queued Send | `register.tsx:4606,4797` + ticket | `outbox.send@1` → executor → ticket at claim | confirm |
 | O3 | outbox | **Jira comment through the session's own Atlassian MCP** | `register.tsx:1141,1197`; the kernel never sees it, and `connector-jira/driver.mjs:84` `gateWrite` lets every write through | `outbox.send@1` through the **kernel's** Jira connector, with a real `gateWrite`. The session-MCP path is removed | confirm |
 | O4 | outbox / report | Finish the Weekly Report → Outlook draft | `register.tsx:5468,5586,4079` | `report.send@1` | confirm |
 | O5 | outbox | Microsoft sign-in; background token refresh writes secrets | `register.tsx:713-718,471` | `kernel.connector.signin@1`. The refresh runs as the daemon's connector executor (P6), with no person signature | local |
+| O6 | outbox | Send a draft on a provider mod's channel (`provides: outbox.channel:<name>`, Haystack P5) | `outbox/hooks/register.tsx` raiseDraft, the provider's `send` rpc | **new** `outbox.provider.send@1`, `provider` bound, the draft as shown (to, subject, body, seen) | confirm (safety send) |
 | P1 | parley | Approve a draft → hub send, with the person's approval signed | `parley/hooks/register.tsx:680-693,2314,2344` | `parley.send@1` | decide, confirm if it reaches out |
 | P2 | parley | "Say" in the person's words; room post | `register.tsx:1101,1865,2565` | `parley.send@1` / `parley.room.post@1` | confirm |
 | P3 | parley | "Approve and always allow" → hub policy grant | `register.tsx:3410,851` | `hitch.grant.issue@1`, **refused when it reaches out** (see open question 5) | local |
@@ -207,6 +210,7 @@ In Hitch, a typed slash command in a session is **not** an answer. It points at 
 | Q1 | queue | Inbox pane decisions | `queue/hooks/register.tsx:465` | `queue.*@1` | confirm (deny narrow) |
 | Q2 | queue | Answer a waiting question **as the person's words** (`asUser`) | `register.tsx:305-326,768` | `queue.question@1`, answered by a client. The `asUser` channel from the store file is removed | confirm |
 | T1 | tasks | Queued nudge, discuss, bring (text typed into sessions) | `tasks/hooks/register.tsx:2654` | **retired**: Hitch never prompts (Principle 2). The person writes with `POST /messages` | — |
+| T2 | tasks | An urgent to-do, an overdue wait, a to-do whose ticket finished (Haystack P5) | `tasks/hooks/register.tsx` askTask, `sdk/inbox-tasks.ts` | **new** item `tasks.todo@1`, offers done and snooze; changing the wait is a full client's | narrow (item verb) |
 | R1 | report | Finish (stages in Outbox), research | `report/hooks/register.tsx:1775` | `report.send@1` | confirm |
 | WI1 | wins | Sweep: a prompt sent to every agent | `wins/hooks/register.tsx:1270,1342` | **retired** (sweeps are gone) | — |
 | PB1 | playbook | Keep or keepRepo (its own approval key) | `playbook/hooks/register.tsx:917,960` | `playbook.entry@1` | decide |

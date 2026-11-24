@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hitch.dev/types/watch.stacked@1.schema.json",
+  "title": "watch.stacked@1 (item kind): data",
+  "description": "A pull request that is green and approved but stacked on another branch (inventory W5, Haystack P5): nothing merges from here, the chain lands as one PR once it has all been reviewed. Offers dismiss ('Got it').",
+  "type": "object",
+  "required": [
+    "pr",
+    "base"
+  ],
+  "properties": {
+    "pr": {
+      "type": "string",
+      "maxLength": 200
+    },
+    "base": {
+      "type": "string",
+      "maxLength": 200
+    },
+    "url": {
+      "type": "string",
+      "maxLength": 500
+    },
+    "v2id": {
+      "type": "string",
+      "maxLength": 200
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hitch.dev/types/watch.review@1.schema.json",
+  "title": "watch.review@1 (item kind): data",
+  "description": "A review asked of the person (inventory W6, Haystack P5): the review itself is theirs, on its pull request. Offers dismiss ('Got it').",
+  "type": "object",
+  "required": [
+    "pr"
+  ],
+  "properties": {
+    "pr": {
+      "type": "string",
+      "maxLength": 200
+    },
+    "by": {
+      "type": "string",
+      "maxLength": 80
+    },
+    "url": {
+      "type": "string",
+      "maxLength": 500
+    },
+    "v2id": {
+      "type": "string",
+      "maxLength": 200
+    }
+  },
+  "additionalProperties": false
+}
