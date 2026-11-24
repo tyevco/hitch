@@ -62,15 +62,16 @@ export function createNode({ store = createStore(), clock = { now: () => Date.no
   function audit(id, entry) { (store.audit.get(id) ?? store.audit.set(id, []).get(id)).push({ at: iso(now()), ...entry }); }
 
   function requestDecision({ kind, args = {}, title = kind, summary = '', preview, options, requester = 'mod:toy',
-    expires = null, onExpire = 'withdraw', defaultable, remoteApprove = false, inherit, followOf }) {
+    expires = null, onExpire = 'withdraw', defaultable, remoteApprove = false, inherit, followOf, reachesOut = false }) {
     const cat = catalogue.types[kind];
     if (cat?.floor === 'inherit' && !inherit) throw new Refusal('invalid', { message: `${kind} inherits its floor and safety from another decision` });
     if (!cat?.decision && !V.has(kind) && !declaredKinds.includes(kind)) throw new Refusal('unknown_type');
     if (V.has(kind)) { const e = V.validate(kind, args); if (e.length) throw new Refusal('invalid', { message: e.join('; ') }); }
     if (kind === 'hitch.grant.issue@1' && args.kinds.some(SAFE_KINDS)) throw new Refusal('invalid', { message: 'grants may not cover safety kinds' });
-    const safety = inherit?.safety ?? cat?.safety ?? 'none';
+    const out = reachesOut && cat?.reachesOut; // leaves the machine: raise floor and safety
+    const safety = inherit?.safety ?? (out ? out.safety : cat?.safety) ?? 'none';
     if (safety !== 'none' && (onExpire === 'fallback' || defaultable)) throw new Refusal('invalid', { message: 'safety kinds take no default' });
-    const floor = inherit?.floor ?? (cat?.floor === 'vendor' || !cat ? 'local' : cat.floor);
+    const floor = inherit?.floor ?? (out ? out.floor : cat?.floor === 'vendor' || !cat ? 'local' : cat.floor);
     // verbFloors: verbs that run no side effect may sit below the kind's floor
     // (default: decline is narrow). Every other verb gets at least the floor.
     const vf = { decline: 'narrow', ...(cat?.verbFloors ?? {}) };
@@ -234,7 +235,7 @@ export function createNode({ store = createStore(), clock = { now: () => Date.no
     if (!opt) throw new Refusal('invalid', { message: 'verb not offered' });
     if (isGrant) {
       const g = store.grants.get(p.grant);
-      if (SAFE_KINDS(d.kind) || !g.kinds.includes(d.kind)) throw new Refusal('scope');
+      if ((bugs.grantByKind ? SAFE_KINDS(d.kind) : d.safety !== 'none') || !g.kinds.includes(d.kind)) throw new Refusal('scope'); // per decision: a reachesOut parley send is a safety send
       if (g.used >= g.caps.perHour) throw new Refusal('rate');
     } else {
       const c = p.client;

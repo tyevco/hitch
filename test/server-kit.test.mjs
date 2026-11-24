@@ -27,6 +27,7 @@ const PLANTED = {
   noEventFilter: ['message-session-scope', 'message-privacy'],
   anyoneAcks: ['message-delivery'],
   autoRetry: ['uncertain-never-reruns'],
+  grantByKind: ['reaches-out-is-a-send'],
   sasNoNodeKey: ['pairing-sas', 'pairing-impostor'],
 };
 for (const [bug, ids] of Object.entries(PLANTED)) {

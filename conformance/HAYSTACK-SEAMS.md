@@ -216,14 +216,14 @@ In Hitch, a typed slash command in a session is **not** an answer. It points at 
 
 | # | Hole (verified) | Closed at P3 by |
 |---|---|---|
-| A1 | **Queue reply forgery.** An agent writes a reply signal into the queue store file, and the target session submits it as the person's words (`queue/hooks/register.tsx:326`) | `queue.question@1` answered only by a paired client; the `asUser` path is deleted |
+| A1 | **Queue reply forgery.** An agent writes a reply signal into the queue store file, and the target session submits it as the person's words (`queue/hooks/register.tsx:326`) | **Hot-fixed early on v2 (2026-11-24).** P3 still owns `queue.question@1`, answered only by a paired client, and the deletion of the `asUser` path |
 | A2 | **`POST /reset` with no credential** clears a watch's retry cap (`ext/watchtower/routes.mjs:351`) | `watch.retry@1`; the route takes a credential |
 | A3 | **A forged first-party hello** passes poll, claim and done for that mod's queued actions (`kernel/routes/actions.mjs:18`) | only a kernel-minted executor credential claims; outcomes come from the executor log (seam 5) |
 | A4 | **Tokenless legacy fallbacks**: `olderCaller` (`routes/actions.mjs:19`), `mayHubShim`, `mayConnect`, `/inbox/act` when absent | refused on every `/hitch/v1` route. The v2 fallbacks are deleted when their decision kinds exist |
 | A5 | **Bearer pairings** still accepted as `x-cx-user` (`registry.mjs:650`); capturable by a socket relay | frozen at P3 and never accepted on `/hitch/v1`; deleted at P7 |
-| A6 | **Jira writes** bypass the kernel (O3), and `connector-jira` `gateWrite` allows everything (`driver.mjs:84`) | `outbox.send@1` through the kernel connector, with a real `gateWrite` |
-| A7 | **Parley trusted pairs** send with no click under "always allow" | the existing trust stays the person's grant, but no new grant may cover a send that reaches out (open question 5) |
-| A8 | **Wins** are logged without the person's confirmation (`wins/hooks/register.tsx:930`, off by default) | `wins.confirm@1` exists; whether confirming is on by default is **Tyler's call** (open question 6) |
+| A6 | **Jira writes** bypass the kernel (O3), and `connector-jira` `gateWrite` allows everything (`driver.mjs:84`) | **Hot-fixed early on v2 (2026-11-24).** P3 still owns `outbox.send@1` through the kernel connector, with a real `gateWrite` |
+| A7 | **Parley trusted pairs** send with no click under "always allow" | **Decided:** a send that reaches out is a safety `send` at confirm (catalogue `reachesOut`), so always-allow covers only sessions on this machine. Checked by `reaches-out-is-a-send` |
+| A8 | **Wins** are logged without the person's confirmation (`wins/hooks/register.tsx:930`, off by default) | **Accepted limit (Tyler, 2026-11-24):** wins need no confirmation by default. Agents log them as today; review and discard are optional in a client (`wins.confirm@1`) |
 | A9 | **Paired sessions sign from timers** (`outbox:471` refresh, `updates:309` reload) | paired signatures are gone; background work runs as daemon executors |
 
 ### Kinds this adds to the catalogue
@@ -236,5 +236,5 @@ In Hitch, a typed slash command in a session is **not** an answer. It points at 
 2. ~~Mod pairings never become clients~~: decided. The inventory above lists every path that relies on them and what replaces it.
 3. **Audit size and archive at 12 months.** These are estimates; check against a week of real decision counts once P3 runs.
 4. ~~Duplicate-run policy~~: decided. Nothing re-runs automatically; the outcome is `uncertain` and a `hitch.retry@1` decision is raised.
-5. **Parley sends that reach out, and grants.** `parley.send@1` is `safety: none` in the catalogue, so a grant may cover it, even when it reaches another person's machine. I recommend safety `send` whenever `reachesOut`: no grant, and confirm. That would end v2's "always allow" for messages that leave the machine.
-6. **Wins confirmation by default** (A8): today an agent's win is logged unconfirmed. The wins feed Sam's recap, so this is Tyler's call.
+5. ~~Parley sends that reach out~~: decided. Always a safety `send` at confirm.
+6. ~~Wins confirmation by default~~: decided. No confirmation by default; A8 is an accepted limit.

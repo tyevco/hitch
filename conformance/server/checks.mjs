@@ -376,6 +376,19 @@ export const CHECKS = [
       assert.equal((await as('clientDecide').answer(d.followUp, 'decline')).status, 200);
       assert.equal(await adapter.executorCalls(id), 1);
     } },
+  { id: 'reaches-out-is-a-send', profile: 'decisions', title: 'a parley send that leaves the machine is a safety send at confirm, and a grant covers only the local ones', needs: ['issueGrant'],
+    async run({ adapter, url, aid, as }) {
+      const g = connect(url, aid, await adapter.issueGrant({ kinds: ['parley.send@1'] }));
+      const here = await adapter.requestDecision({ kind: 'parley.send@1', args: { to: 's-other' } });
+      const away = await adapter.requestDecision({ kind: 'parley.send@1', args: { to: 'aid:remote1' }, reachesOut: true });
+      const dh = (await g.decision(here)).body, da = (await g.decision(away)).body;
+      assert.equal(dh.safety, 'none'); assert.equal(dh.options.find((o) => o.verb === 'approve').tier, 'decide');
+      assert.equal(da.safety, 'send', 'reachesOut raises safety to send');
+      assert.equal(da.options.find((o) => o.verb === 'approve').tier, 'confirm', 'and the floor to confirm');
+      assert.equal((await g.answer(here, 'approve', { decision: dh })).status, 200, 'always-allow still covers a send on this machine');
+      refused(await g.answer(away, 'approve', { decision: da }), 'scope', 'a grant on a send that leaves the machine:');
+      refused(await as('clientDecide').answer(away, 'approve'), 'tier');
+    } },
 
   // ---- pairing ------------------------------------------------------------------------
   { id: 'pairing-sas', profile: 'pairing', title: 'commit-reveal yields the same 6-digit SAS on both sides and a local hitch.client.pair@1 decision',
