@@ -121,10 +121,10 @@ flowchart TD
 | `kernel.agents.grant@1` | kernel | expose, grant, extend, quarantine | local |
 | `watch.merge@1` / `watch.deploy@1` / `watch.prready@1` | watch | PR or run ref | confirm |
 | `outbox.send@1` | outbox | draft `ref`, recipient resolved by the node | confirm |
-| `parley.send@1` / `parley.room.post@1` | parley | **`reachesOut`** (it leaves this machine): floor confirm and **safety send**, so no grant, default or always-allow covers it (Tyler, 2026-11-24) | decide; reachesOut: confirm, safety send |
+| `parley.send@1` / `parley.room.post@1` | parley | **`reachesOut`** (it leaves this machine): floor confirm and **safety send**, so no grant, default or always-allow covers it (Tyler, 2026-11-24). **The node derives it** from the bound recipient (anything that is not a session on this node); a requester's flag can only raise it, never lower it | decide; reachesOut: confirm, safety send |
 | `director.hire@1` | director | | confirm |
 | `playbook.entry@1` | playbook | keep / keepRepo / edit / discard, bound to the content hash | decide |
-| `forms.submit@1` / `report.send@1` | forms / report | | decide / confirm |
+| `forms.submit@1` / `report.send@1` | forms / report | a form to a teammate leaves the machine: `reachesOut`, as for parley | decide (reachesOut: confirm, safety send) / confirm |
 | `queue.question@1` / `queue.permission@1` / `queue.plan@1` | queue | choices; permit-once or deny only | confirm (deny is narrow) |
 | `wins.confirm@1` / `wins.stage@1`; feeds `wins.weekly@1`, `wins.report@1` | wins | | decide |
 | `message.received/answered/delivery@1`, `work.*@1`, `todo.*@1` | generic | from contract.mjs GENERIC_TOPICS; `delivery.state` is queued\|sent\|seen\|acked\|held\|failed\|expired\|disputed | — |

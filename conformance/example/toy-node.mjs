@@ -68,7 +68,11 @@ export function createNode({ store = createStore(), clock = { now: () => Date.no
     if (!cat?.decision && !V.has(kind) && !declaredKinds.includes(kind)) throw new Refusal('unknown_type');
     if (V.has(kind)) { const e = V.validate(kind, args); if (e.length) throw new Refusal('invalid', { message: e.join('; ') }); }
     if (kind === 'hitch.grant.issue@1' && args.kinds.some(SAFE_KINDS)) throw new Refusal('invalid', { message: 'grants may not cover safety kinds' });
-    const out = reachesOut && cat?.reachesOut; // leaves the machine: raise floor and safety
+    // Leaves the machine: derived by the NODE from the bound recipient (anything
+    // that is not a session on this node). The request flag can only raise it.
+    // Toy convention: a local session id starts with "s-".
+    const leaves = reachesOut || (!bugs.trustReachFlag && typeof args.to === 'string' && !/^s-/.test(args.to));
+    const out = leaves && cat?.reachesOut;
     const safety = inherit?.safety ?? (out ? out.safety : cat?.safety) ?? 'none';
     if (safety !== 'none' && (onExpire === 'fallback' || defaultable)) throw new Refusal('invalid', { message: 'safety kinds take no default' });
     const floor = inherit?.floor ?? (out ? out.floor : cat?.floor === 'vendor' || !cat ? 'local' : cat.floor);

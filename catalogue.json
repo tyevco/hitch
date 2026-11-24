@@ -198,7 +198,11 @@
       "privacy": "text",
       "decision": true,
       "floor": "decide",
-      "safety": "none"
+      "safety": "none",
+      "reachesOut": {
+        "floor": "confirm",
+        "safety": "send"
+      }
     },
     "report.send@1": {
       "owner": "report",
