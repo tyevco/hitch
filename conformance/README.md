@@ -51,7 +51,7 @@ The toy node's adapter, [`example/toy-adapter.mjs`](example/toy-adapter.mjs), is
 |---|---|
 | core | discovery, sockhello, hello, unauthenticated, request-replay, lists, envelopes, sse-equals-longpoll, resume, longpoll-waits, gap, from-stamped, publish-owner-only |
 | decisions | decision-signed, not-a-client, decide-answer, tier, narrow-decline, step-up, local-step-up, suite, stale, one-winner, answer-replay, answer-window, verb-offered, revoked, waits-forever, expiry-never-approves, no-safety-default, grant-safety |
-| pairing | pairing-sas, pairing-commit, agent-bootstrap, pairing-approve, pairing-presence |
+| pairing | pairing-sas, pairing-impostor, pairing-commit, agent-bootstrap, pairing-approve, pairing-presence |
 
 Not yet covered: feeds, messaging, tasks, push, relay, federation, privacy classes on events, the attention ladder, and the OS-dialog bootstrap (it needs a human). The Python stdlib variant for pairview is not built.
 

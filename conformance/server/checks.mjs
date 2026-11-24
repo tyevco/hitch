@@ -326,12 +326,39 @@ export const CHECKS = [
   { id: 'pairing-sas', profile: 'pairing', title: 'commit-reveal yields the same 6-digit SAS on both sides and a local hitch.client.pair@1 decision',
     async run(ctx) {
       const r = await pairUpTo(ctx);
-      assert.equal(r.reveal.sas, r.expectSas, 'SAS = sasOf({commit, clientNonce, serverNonce, pub})');
+      assert.equal(r.reveal.sas, r.expectSas, 'SAS = sasOf({commit, clientNonce, serverNonce, pub, nodeKey})');
+      assert.notEqual(r.impostorSas, r.expectSas, 'a client handed another node key computes a different SAS');
       const d = (await ctx.as('clientDecide').decision(r.reveal.decision)).body;
       ok('hitch.decision@1', d);
       assert.equal(d.kind, 'hitch.client.pair@1');
       assert.equal(d.options.find((o) => o.verb === 'approve').tier, 'local');
       assert.equal(d.safety, 'grant');
+    } },
+  { id: 'pairing-impostor', profile: 'pairing', title: 'an impostor relaying the pairing with its own node key yields a different SAS; the person declines and no credential works',
+    async run(ctx) {
+      if (!ctx.P.clientLocal) throw new Skip('adapter has no clientLocal');
+      const { genKey } = await import('../lib/wire.mjs');
+      const fake = genKey('ed25519');
+      const proxy = await relay(ctx.url, (path, body) => (path === '/.well-known/hitch' ? { ...body, nodeKey: { ...body.nodeKey, x: fake.pub } } : body));
+      try {
+        const disc = await (await fetch(proxy.url + '/.well-known/hitch')).json();
+        assert.equal(disc.nodeKey.x, fake.pub, 'the relay hands the client its own key');
+        const r = await pairUpTo({ ...ctx, url: proxy.url, discovery: disc });
+        assert.notEqual(r.reveal.sas, r.expectSas, 'the code the node shows differs from the code the client computed');
+        const d = (await ctx.as('clientLocal').decision(r.reveal.decision)).body;
+        const shown = d.preview.find((x) => x.label === 'Code')?.value;
+        assert.equal(shown, r.reveal.sas, 'the pair decision shows the node-side code in a "Code" row');
+        assert.notEqual(shown, r.expectSas);
+        const { sasOf } = await import('./sas.mjs');
+        assert.equal(shown, sasOf({ commit: r.commit, clientNonce: r.nonce, serverNonce: r.start.serverNonce, pub: r.key.pub, nodeKey: ctx.discovery.nodeKey.x }),
+          'the node computes its code over its own real key');
+        // the person compares the codes, sees a mismatch, and declines
+        assert.equal((await ctx.as('clientLocal').answer(r.reveal.decision, 'decline')).status, 200);
+        const st = await fetch(ctx.url + `/hitch/v1/clients/pairings/${r.start.pairing}`).then((x) => x.json());
+        assert.equal(st.state, 'declined');
+        assert.equal(st.client, undefined, 'no client id for a declined pairing');
+        refused(await connect(ctx.url, ctx.aid, { cid: 'c_none', key: r.key }).hello(), 'unauthenticated');
+      } finally { await proxy.close(); }
     } },
   { id: 'pairing-commit', profile: 'pairing', title: 'a reveal that does not match the commit is refused',
     async run(ctx) {
@@ -386,6 +413,22 @@ export const CHECKS = [
     } },
 ];
 
+// A relaying impostor: forwards every request to the real node, rewriting JSON responses.
+async function relay(target, rewrite) {
+  const http = await import('node:http');
+  const server = http.createServer(async (req, res) => {
+    const chunks = []; for await (const c of req) chunks.push(c);
+    const headers = { ...req.headers }; delete headers.host; delete headers['content-length'];
+    const up = await fetch(target + req.url, { method: req.method, headers, body: req.method === 'GET' ? undefined : Buffer.concat(chunks) });
+    let text = await up.text();
+    try { text = JSON.stringify(rewrite(new URL(req.url, 'http://x').pathname, JSON.parse(text))); } catch {}
+    res.writeHead(up.status, { 'content-type': up.headers.get('content-type') ?? 'application/json' });
+    res.end(text);
+  });
+  await new Promise((ok2) => server.listen(0, '127.0.0.1', ok2));
+  return { url: `http://127.0.0.1:${server.address().port}`, close: () => new Promise((ok2) => { server.closeAllConnections(); server.close(ok2); }) };
+}
+
 async function waitPaired(ctx, pairing) {
   let st;
   for (let i = 0; i < 20; i++) {
@@ -410,7 +453,8 @@ async function pairUpTo(ctx, { reveal = true, presence } = {}) {
   if (!reveal) return { start, key };
   const rv = await fetch(ctx.url + `/hitch/v1/clients/pairings/${start.pairing}/reveal`, { method: 'POST', body: JSON.stringify({ nonce }) });
   assert.equal(rv.status, 200);
-  return { start, key, reveal: await rv.json(), expectSas: sasOf({ commit, clientNonce: nonce, serverNonce: start.serverNonce, pub: key.pub }) };
+  return { start, key, commit, nonce, reveal: await rv.json(), expectSas: sasOf({ commit, clientNonce: nonce, serverNonce: start.serverNonce, pub: key.pub, nodeKey: ctx.discovery.nodeKey.x }),
+    impostorSas: sasOf({ commit, clientNonce: nonce, serverNonce: start.serverNonce, pub: key.pub, nodeKey: (await import('../lib/wire.mjs')).genKey('ed25519').pub }) };
 }
 
 export class Skip extends Error {}

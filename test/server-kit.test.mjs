@@ -23,6 +23,7 @@ const PLANTED = {
   expiryApproves: ['expiry-never-approves'],
   ignoreCeiling: ['tier', 'suite'],
   noNonceCheck: ['answer-replay'],
+  sasNoNodeKey: ['pairing-sas', 'pairing-impostor'],
 };
 for (const [bug, ids] of Object.entries(PLANTED)) {
   test(`planted bug ${bug} is caught by ${ids.join(', ')}`, async () => {

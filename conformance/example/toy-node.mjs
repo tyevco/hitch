@@ -248,7 +248,7 @@ export function createNode({ store = createStore(), clock = { now: () => Date.no
     if (!p || p.state !== 'committed') throw new Refusal('gone');
     const { nonce } = JSON.parse(body);
     if (hashOf({ pub: p.pub, nonce }) !== p.commit) throw new Refusal('invalid', { message: 'commit does not match' });
-    const sas = sasOf({ commit: p.commit, clientNonce: nonce, serverNonce: p.serverNonce, pub: p.pub });
+    const sas = sasOf({ commit: p.commit, clientNonce: nonce, serverNonce: p.serverNonce, pub: p.pub, nodeKey: bugs.sasNoNodeKey ? '' : nodeKey.pub });
     p.state = 'revealed';
     // Every client after the first starts at decide (hmac is capped there anyway);
     // only a later hitch.client.scope@1 (local) raises it. The first client's
