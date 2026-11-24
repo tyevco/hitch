@@ -195,7 +195,9 @@
           "const": "ed25519"
         },
         "kid": {
-          "type": "string"
+          "type": "string",
+          "pattern": "^node:[a-z0-9]{6,32}:[0-9a-f]{8}$",
+          "description": "node:<aid>:<fp>, fp = first 8 hex of sha256(raw x)"
         },
         "v": {
           "$ref": "#/$defs/b64u"
@@ -325,7 +327,8 @@
         "withdrawn",
         "expired",
         "resolved-elsewhere",
-        "fallback"
+        "fallback",
+        "uncertain"
       ]
     },
     "actionState": {

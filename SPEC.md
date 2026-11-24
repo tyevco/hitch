@@ -287,8 +287,8 @@ Pinned 2026-11-23 with the reference client. The kit's [`conformance/lib/wire.mj
 | Canonical bytes | JCS (RFC 8785), UTF-8, for every hash and every signature over an object |
 | Hash format | `sha256:` + 64 lowercase hex |
 | Binary in JSON | base64url, no padding |
-| Node signature (`sig`) | Ed25519 over JCS(object minus `sig`); `sig = {suite:"ed25519", kid:"node:<aid>", v}`. Envelopes, decision bodies (GET, lists, answer responses) and items are signed. Clients verify **before rendering** |
-| Node key | `/.well-known/hitch` `nodeKey = {suite:"ed25519", kid, x}`, `x` = JWK OKP coordinate (raw 32 bytes). Pinned at pairing |
+| Node signature (`sig`) | Ed25519 over JCS(object minus `sig`); `sig = {suite:"ed25519", kid, v}`. Envelopes, decision bodies (GET, lists, answer responses) and items are signed. Clients verify **before rendering** |
+| Node key | `/.well-known/hitch` `nodeKey = {suite:"ed25519", kid, x}`, `x` = JWK OKP coordinate (raw 32 bytes). **`kid = node:<aid>:<fp>`**, `fp` = first 8 hex of sha256(raw `x`): a rotation changes `kid`, `aid` stays. Pinned at pairing. Rotation: the old key signs `{purpose:"hitch-node-key-rotate", aid, old:{kid,x}, new:{kid,x}, at}`; discovery serves it under `previous[]` (see [HAYSTACK-SEAMS.md](conformance/HAYSTACK-SEAMS.md#seam-1-the-node-key)) |
 | `shownHash` | sha256(JCS({id, rev, title, summary, effect, preview})) of the record **as rendered**. `summary` is required (may be `""`) |
 | `bindHash` | computed by the node over the kind and its bound args; opaque to clients, echoed back |
 

@@ -29,6 +29,8 @@ export const CHECKS = [
       ok('hitch.discovery', d);
       assert.ok(d.specs.includes('hitch/1'));
       assert.ok(d.profiles.includes('core'));
+      const { nodeKid } = await import('../lib/wire.mjs');
+      assert.equal(d.nodeKey.kid, nodeKid(d.aid, d.nodeKey.x), 'kid = node:<aid>:<first 8 hex of sha256(raw x)>');
     } },
   { id: 'sockhello', profile: 'core', title: 'sockhello: the node signs the client challenge with its key, unauthenticated',
     async run({ url, aid, discovery }) {
@@ -77,7 +79,8 @@ export const CHECKS = [
       }
     } },
   { id: 'envelopes', profile: 'core', title: 'stream events are schema-valid, node-signed envelopes with rising seq',
-    async run({ adapter, as, verify }) {
+    async run(ctx) {
+      const { adapter, as, verify } = ctx;
       const c = as('clientDecide');
       const start = (await c.list('decisions')).body.cursor;
       await adapter.requestDecision(plain);
@@ -89,6 +92,7 @@ export const CHECKS = [
         assert.deepEqual(V.validateEnvelope(e), []);
         assert.ok(e.seq > last, 'seq strictly rising'); last = e.seq;
         assert.ok(verify(e), `node signature on ${e.type} must verify against /.well-known nodeKey`);
+        assert.equal(e.sig.kid, ctx.discovery.nodeKey.kid, 'sig.kid names the current node key');
       }
       assert.ok(r.body.events.some((e) => e.type === 'hitch.changed@1' && e.data.resource === 'decisions'));
     } },

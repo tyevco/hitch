@@ -31,7 +31,7 @@ flowchart LR
 |---|---|
 | Separate from the hub key | **Yes.** Hitch needs a key with no hub join. The hub pins its key at enroll (`link.mjs:2341`), so sharing it would make every Hitch rotation a hub re-enroll, and a hub `leave()` would break every paired client. At P8 the two are bound by a cross-signature `{purpose:"hitch-hub-bind", aid, node:{kid,x}, hub:{device,pub}}` signed by both keys, so the relay can prove it is one machine |
 | Generation | At daemon start, before the `/hitch/v1` listener opens: `generateKeyPairSync('ed25519')`. Not lazily, because discovery must always answer with the key |
-| `kid` | **`node:<aid>:<fp>`**, where `fp` = the first 8 hex chars of sha256(raw `x`). A rotation then changes `kid` while `aid` stays the same. **Spec change:** SPEC says `node:<aid>`; the schema pattern `^node:` already allows this |
+| `kid` | **`node:<aid>:<fp>`**, where `fp` = the first 8 hex chars of sha256(raw `x`). A rotation then changes `kid` while `aid` stays the same. In SPEC, the schemas and the kit since this commit (checked by `discovery` and `envelopes`) |
 | Private key | PKCS#8 DER, base64, in the OS store: service `claude-extended-hitch`, account `node-key-<fp>`. On macOS it goes **through the signed helper** (`helperStore`, `platform.mjs:549`). That gives a helper-only ACL (`SecAccessCreate([self])`), the planted-item refusal (`secretPins`, `:499`) and the CDHash pin (`codesignLook` `:417`, `helperPin` `:428`). Linux uses `secret-tool`; Windows uses Credential Manager (the key is far below the 800-char chunk limit) |
 | Public part | `state.hitch.nodeKeys = [{kid, x, created, state: active\|retiring\|retired, rotation?}]` in a new `hitch` state namespace (`kernel/state.mjs:20`). It holds public data only |
 | In memory | Loaded once at start into a non-exported `KeyObject` and kept for the process's life. Every event is signed, so a helper round trip per signature is not an option. This is the same accepted limit as the hub key: a process running as Tyler's user can read daemon memory |
@@ -134,7 +134,7 @@ flowchart LR
 
 ## Open questions
 
-1. **Kid format change** (`node:<aid>:<fp>`): it should land in SPEC before sample-client pins keys in P1. This is my recommendation, and it needs your sign-off because it is wire.
+1. ~~Kid format~~: decided and landed (`node:<aid>:<fp>`).
 2. **Mod pairings never become clients.** This follows SPEC Principle 3, but some first-party mods may rely on acting as the person today. Their read paths need an inventory before P3 freezes them.
 3. **Audit size and archive at 12 months.** These are estimates; check against a week of real decision counts once P3 runs.
 4. **The duplicate-run policy** (a late `done` while another claimer invoked): resolve `failed` and raise an item, as above, or hold the outcome until Tyler decides?

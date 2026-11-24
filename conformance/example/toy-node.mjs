@@ -6,7 +6,7 @@ import http from 'node:http';
 import { randomBytes, createHash } from 'node:crypto';
 import {
   SPEC, tierRank, jcs, hashOf, shownHash, genKey, signObject, verifyBytes, importPub,
-  requestString, presenceBytes, randomUlid, b64u,
+  requestString, presenceBytes, randomUlid, b64u, nodeKid,
 } from '../lib/wire.mjs';
 import { makeValidator } from '../lib/schema.mjs';
 import { catalogue } from '../catalog-check.mjs';
@@ -30,7 +30,7 @@ export function createStore() {
 
 export function createNode({ store = createStore(), clock = { now: () => Date.now() }, nodeKey = genKey('ed25519'),
   aid = 'toynode01', retention = 1000, beatMs = 25000, bugs = {}, onRequest, onSend, declaredKinds = [] } = {}) {
-  const kid = `node:${aid}`;
+  const kid = nodeKid(aid, nodeKey.pub);
   const tokens = (store.tokens ??= new Map()); // bearer token -> principal
   // clock drives decision time (expiry, attention). Signature windows use the
   // wall clock, so a test that advances decision time can still sign requests.

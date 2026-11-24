@@ -52,7 +52,7 @@ export async function startMock({ ceiling = 'decide', suite = 'ed25519', privacy
     // serve this decision with a body the node did not sign
     forgeTitle: (id, title = 'Something harmless') => tamper.set(id, (o) => ({ ...o, title })),
     // serve this decision signed by a different key
-    resign: (id) => { const k = genKey('ed25519'); tamper.set(id, (o) => signObject(o, k, `node:${node.aid}`)); },
+    resign: (id) => { const k = genKey('ed25519'); tamper.set(id, (o) => signObject(o, k, `node:${node.aid}:00000000`)); },
     clearTamper: (id) => tamper.delete(id),
     putContent: (...a) => node.putContent(...a),
     setFeed: (name, data) => node.setFeed(name, data),

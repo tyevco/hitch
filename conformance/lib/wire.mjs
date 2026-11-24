@@ -82,6 +82,10 @@ export function verifyBytes(ver, bytes, v) {
   return false;
 }
 
+// Node key id: node:<aid>:<fp>, fp = first 8 hex of sha256(raw 32-byte x).
+// A rotation changes kid; aid stays.
+export const nodeKid = (aid, x) => `node:${aid}:${sha256hex(unb64u(x)).slice(0, 8)}`;
+
 // ---- node signatures over objects ------------------------------------------
 export function signObject(obj, key, kid) {
   const body = without(obj, 'sig');

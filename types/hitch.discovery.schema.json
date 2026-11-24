@@ -14,7 +14,7 @@
     "suites": { "type": "array", "items": { "enum": ["hmac-sha256", "p256", "ed25519", "webauthn"] } },
     "nodeKey": {
       "type": "object", "required": ["suite", "kid", "x"],
-      "properties": { "suite": { "const": "ed25519" }, "kid": { "type": "string", "pattern": "^node:" }, "x": { "$ref": "hitch.defs.schema.json#/$defs/b64u" } },
+      "properties": { "suite": { "const": "ed25519" }, "kid": { "type": "string", "pattern": "^node:[a-z0-9]{6,32}:[0-9a-f]{8}$" }, "x": { "$ref": "hitch.defs.schema.json#/$defs/b64u" } },
       "additionalProperties": false
     }
   }
