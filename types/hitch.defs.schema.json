@@ -339,6 +339,59 @@
         "failed",
         "uncertain"
       ]
+    },
+    "v2bridge": {
+      "type": "object",
+      "description": "Haystack's overlap with v2 (P3 to P7): the Inbox item this decision stands for, its v2 ids, and the v2 action each option runs (its executor is v2's own press path). Bound with the rest, so what runs is what was approved. Gone at P7.",
+      "required": [
+        "item",
+        "actions"
+      ],
+      "properties": {
+        "item": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "id": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "hash": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "draft": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "actions": {
+          "type": "object",
+          "maxProperties": 8,
+          "additionalProperties": {
+            "type": "object",
+            "required": [
+              "mod",
+              "kind",
+              "args"
+            ],
+            "properties": {
+              "mod": {
+                "type": "string",
+                "maxLength": 40
+              },
+              "kind": {
+                "type": "string",
+                "maxLength": 40
+              },
+              "args": {
+                "type": "object"
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
     }
   }
 }
