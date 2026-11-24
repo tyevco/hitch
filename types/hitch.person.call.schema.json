@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hitch.dev/types/hitch.person.call.schema.json",
+  "title": "POST /hitch/v1/person/:op",
+  "description": "A person-client calls a person-only operation directly (the person acts in their own client, so this is a signed command, not a decision; the revoke precedent). `op` must equal the path's op and come from catalogue personOps, which fixes each op's tier, body schema and secret fields. Person-clients only (not_a_client otherwise). Tier, suite and presence are checked as for answers; presence signs JCS(call minus presence). iat/exp \u2264 120 s, nonce single-use (replay). An op with secret fields is tier local, so it travels only over the socket or loopback, and its secrets never reach an event, an audit line or a log. The audit keeps op, client, outcome and a hash of the non-secret fields. `for` names the decision this call answers in place (e.g. a session's kernel.connector.signin@1): the node resolves it as applied by this client, if the op's personOps row lists that kind in `closes`.",
+  "type": "object",
+  "required": [
+    "op",
+    "iat",
+    "exp",
+    "nonce",
+    "body"
+  ],
+  "properties": {
+    "op": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(\\.[a-z][a-zA-Z0-9]*)+$"
+    },
+    "iat": {
+      "$ref": "hitch.defs.schema.json#/$defs/unix"
+    },
+    "exp": {
+      "$ref": "hitch.defs.schema.json#/$defs/unix"
+    },
+    "nonce": {
+      "type": "string",
+      "minLength": 16,
+      "maxLength": 64,
+      "pattern": "^[A-Za-z0-9_-]+$"
+    },
+    "presence": {
+      "$ref": "hitch.defs.schema.json#/$defs/presence"
+    },
+    "for": {
+      "type": "string",
+      "pattern": "^dec_[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "body": {
+      "type": "object"
+    }
+  },
+  "additionalProperties": false
+}

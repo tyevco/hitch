@@ -312,6 +312,48 @@ export function createNode({ store = createStore(), clock = { now: () => Date.no
     return sign(it);
   }
 
+  // ---- person ops: the person acts directly in their own client ------------------------------
+  let personTestOps = false; // test.echo exists only when the adapter turns it on
+  function personCall(p, op, body) {
+    if (!p.client) throw new Refusal('not_a_client');
+    const row = catalogue.personOps?.[op];
+    if (!row || (row.testOnly && !personTestOps)) throw new Refusal('unknown_type', { message: `no person op ${op}` });
+    const b = JSON.parse(body || '{}');
+    const e = V.validate('hitch.person.call', b);
+    if (e.length || b.op !== op) throw new Refusal('invalid', { message: e.join('; ') || 'op does not match the path' });
+    const be = V.validate(row.schema, b.body);
+    if (be.length) throw new Refusal('invalid', { message: be.join('; ') });
+    const c = p.client;
+    if (c.suite === 'hmac-sha256' && tierRank(row.tier) > tierRank('decide')) throw new Refusal('suite');
+    if (tierRank(row.tier) > tierRank(c.ceiling)) throw new Refusal('tier');
+    if (tierRank(row.tier) >= tierRank('confirm')) {
+      const pk = b.presence && c.presence.find((x) => x.kid === b.presence.kid);
+      if (!pk || !verifyBytes(pk.ver, presenceBytes(b), b.presence.v)) throw new Refusal('step_up_required');
+    }
+    if (b.exp < b.iat || b.exp - b.iat > 120 || b.exp < Date.now() / 1000) throw new Refusal('replay', { message: 'iat/exp window' });
+    const nk = `person:${c.id}:${b.nonce}`;
+    if (store.nonces.has(nk)) throw new Refusal('replay');
+    let closes;
+    if (b.for) {
+      const r = store.decisions.get(b.for);
+      if (!r || r.d.state !== 'open' || !(row.closes ?? []).includes(r.d.kind)) throw new Refusal('invalid', { message: 'for: not an open decision this op closes' });
+      closes = r;
+    }
+    store.nonces.set(nk, b.exp);
+    // the op itself (test.echo only in the toy)
+    const result = op === 'test.echo' ? { echo: b.body.text, secretLength: b.body.secret.length } : {};
+    const secret = new Set(row.secret ?? []);
+    const open = Object.fromEntries(Object.entries(b.body).filter(([k]) => !secret.has(k) || bugs.leakSecret));
+    const line = { event: 'person.op', op, by: p.principal, outcome: 'applied', fields: bugs.leakSecret ? open : hashOf(open) };
+    audit(`person/${c.id}`, line);
+    if (closes) {
+      const answered = { verb: 'approve', by: p.principal, at: iso(now()), device: c.device };
+      audit(closes.d.id, { event: 'answered', by: p.principal, verb: 'approve', via: `person:${op}`, fields: line.fields });
+      resolve(closes.d.id, 'applied', { answered });
+    }
+    return { spec: SPEC, op, ok: true, result };
+  }
+
   // ---- revoke --------------------------------------------------------------------------
   // Self: free. Another client: confirm ceiling + presence. All: local + presence.
   function checkPresence(c, b, need) {
@@ -451,7 +493,7 @@ export function createNode({ store = createStore(), clock = { now: () => Date.no
       sweepExpiry(); sweepLeases(); sweepItems();
       if (req.method === 'GET' && path === '/.well-known/hitch') {
         return send(res, 200, { specs: [SPEC], impl: { name: 'toy-node', version: '0.1.0' }, aid, caps: ['sse', 'longpoll'],
-          profiles: ['core', 'decisions', 'pairing', 'feeds', 'messaging', 'tasks'], suites: ['hmac-sha256', 'p256', 'ed25519'],
+          profiles: ['core', 'decisions', 'pairing', 'feeds', 'messaging', 'tasks', 'person'], suites: ['hmac-sha256', 'p256', 'ed25519'],
           nodeKey: { suite: 'ed25519', kid, x: nodeKey.pub } });
       }
       if (req.method === 'POST' && path === '/hitch/v1/clients/pairings') return send(res, 202, pairStart(body));
@@ -504,6 +546,8 @@ export function createNode({ store = createStore(), clock = { now: () => Date.no
       }
       if (req.method === 'GET' && path === '/hitch/v1/events') return events(req, res, url, p);
       if (req.method === 'POST' && path === '/hitch/v1/messages') return send(res, 200, postMessage(p, body));
+      const pm = path.match(/^\/hitch\/v1\/person\/([a-z][a-z0-9]*(?:\.[a-z][a-zA-Z0-9]*)+)$/);
+      if (req.method === 'POST' && pm) return send(res, 200, personCall(p, pm[1], body));
       const is = path.match(/^\/hitch\/v1\/items\/(itm_[0-9A-Z]+)\/state$/);
       if (req.method === 'POST' && is) return send(res, 200, itemState(p, is[1], body));
       const ms = path.match(/^\/hitch\/v1\/messages\/(msg_[0-9A-Z]+)\/state$/);
@@ -628,7 +672,7 @@ export function createNode({ store = createStore(), clock = { now: () => Date.no
     putContent: (bytes, type = 'text/plain; charset=utf-8', privacy = 'text') => {
       const b = Buffer.from(bytes); const h = 'sha256:' + createHash('sha256').update(b).digest('hex');
       store.content.set(h, { b, type, privacy }); return { hash: h, bytes: b.length };
-    }, answerAs: (p, id, body) => answer(p, id, body), withdraw: (id) => resolve(id, 'withdrawn'), addToken, addClient, revokeClient, issueGrant, trim, setFeed, putItem, crashNextExecution: () => { crashNext = true; },
+    }, answerAs: (p, id, body) => answer(p, id, body), withdraw: (id) => resolve(id, 'withdrawn'), addToken, addClient, revokeClient, issueGrant, trim, setFeed, putItem, enablePersonTestOps: () => { personTestOps = true; }, crashNextExecution: () => { crashNext = true; },
     resolveElsewhere: (id, where) => resolve(id, 'resolved-elsewhere', { answered: { verb: 'approve', by: 'app:herdr', at: iso(now()), where } }),
     executorCalls: (id) => store.executorCalls.get(id) ?? 0,
     publishAs: (principal, type, data) => emit(type, data, { from: { aid, principal } }),

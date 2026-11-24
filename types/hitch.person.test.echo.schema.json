@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hitch.dev/types/hitch.person.test.echo.schema.json",
+  "title": "person op test.echo (conformance only; never in a release)",
+  "type": "object",
+  "required": [
+    "text",
+    "secret"
+  ],
+  "properties": {
+    "text": {
+      "type": "string",
+      "maxLength": 200
+    },
+    "secret": {
+      "type": "string",
+      "maxLength": 200
+    }
+  },
+  "additionalProperties": false
+}

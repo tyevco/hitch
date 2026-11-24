@@ -4,17 +4,95 @@
   "title": "GET /.well-known/hitch",
   "description": "No auth. A node may claim only profiles whose hitch-check run passed.",
   "type": "object",
-  "required": ["specs", "impl", "aid", "caps", "profiles", "suites", "nodeKey"],
+  "required": [
+    "specs",
+    "impl",
+    "aid",
+    "caps",
+    "profiles",
+    "suites",
+    "nodeKey"
+  ],
   "properties": {
-    "specs": { "type": "array", "minItems": 1, "items": { "type": "string", "pattern": "^[a-z]+/[0-9]+$" } },
-    "impl": { "type": "object", "required": ["name", "version"], "properties": { "name": { "type": "string" }, "version": { "type": "string" } } },
-    "aid": { "$ref": "hitch.defs.schema.json#/$defs/aid" },
-    "caps": { "type": "array", "items": { "type": "string" } },
-    "profiles": { "type": "array", "items": { "enum": ["core", "decisions", "feeds", "messaging", "tasks", "push", "relay", "federation", "pairing"] } },
-    "suites": { "type": "array", "items": { "enum": ["hmac-sha256", "p256", "ed25519", "webauthn"] } },
+    "specs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z]+/[0-9]+$"
+      }
+    },
+    "impl": {
+      "type": "object",
+      "required": [
+        "name",
+        "version"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        }
+      }
+    },
+    "aid": {
+      "$ref": "hitch.defs.schema.json#/$defs/aid"
+    },
+    "caps": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "profiles": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "core",
+          "decisions",
+          "feeds",
+          "messaging",
+          "tasks",
+          "push",
+          "relay",
+          "federation",
+          "pairing",
+          "person"
+        ]
+      }
+    },
+    "suites": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "hmac-sha256",
+          "p256",
+          "ed25519",
+          "webauthn"
+        ]
+      }
+    },
     "nodeKey": {
-      "type": "object", "required": ["suite", "kid", "x"],
-      "properties": { "suite": { "const": "ed25519" }, "kid": { "type": "string", "pattern": "^node:[a-z0-9]{6,32}:[0-9a-f]{8}$" }, "x": { "$ref": "hitch.defs.schema.json#/$defs/b64u" } },
+      "type": "object",
+      "required": [
+        "suite",
+        "kid",
+        "x"
+      ],
+      "properties": {
+        "suite": {
+          "const": "ed25519"
+        },
+        "kid": {
+          "type": "string",
+          "pattern": "^node:[a-z0-9]{6,32}:[0-9a-f]{8}$"
+        },
+        "x": {
+          "$ref": "hitch.defs.schema.json#/$defs/b64u"
+        }
+      },
       "additionalProperties": false
     }
   }

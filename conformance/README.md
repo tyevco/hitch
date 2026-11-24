@@ -44,6 +44,7 @@ export default {
   async mintClient({ ceiling, privacy, presence }) { return { cid, key, presence?: { kid, key } }; },  // a fresh paired client
   async setFeed(name, data) {},          // publish a feed revision (kernel.connectors@1, wins.weekly@1)
   async putItem({ kind, title, owner, offers, data }) { return 'itm_…'; },  // an item, as its owner mod would publish it
+  async enablePersonTestOps() {},       // turn on the test-only person op test.echo (never in a release)
   async crashNextExecution() {},         // the next executor run logs `invoked` and then dies (no done)
 };
 ```
@@ -58,6 +59,7 @@ The toy node's adapter, [`example/toy-adapter.mjs`](example/toy-adapter.mjs), is
 | decisions | decision-signed, not-a-client, decide-answer, tier, narrow-decline, send-back-below-floor, step-up, local-step-up, suite, stale, one-winner, answer-replay, answer-window, verb-offered, revoked, waits-forever, expiry-never-approves, no-safety-default, grant-safety, reaches-out-is-a-send, uncertain-never-reruns, uncertain-leave-it |
 | pairing | pairing-sas, pairing-impostor, pairing-commit, agent-bootstrap, pairing-approve, pairing-hmac-seal, pairing-presence, revoke-self, revoke-other, revoke-all (always runs last: it revokes the adapter's clients) |
 | feeds | feed-read, feed-changed, feed-guards |
+| person | person-op-guarded, person-op-secret-stays-out, person-op-replay |
 | tasks | item-verbs, item-verbs-guarded, item-verbs-never-delete |
 | messaging | message-post, message-idem, message-person-only, message-session-scope, message-delivery, message-privacy |
 

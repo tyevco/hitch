@@ -41,6 +41,18 @@ export function check({ types = [], decisionKinds = [], schemaDirs = [], tiers =
   return findings;
 }
 
+// personOps: every op has a tier, a body schema, and is local if it carries a secret.
+export function checkPersonOps(ops = catalogue.personOps ?? {}) {
+  const schemas = new Set(readdirSync(join(ROOT, 'types')).filter((f) => f.endsWith('.schema.json')).map((f) => f.slice(0, -12)));
+  const out = [];
+  for (const [op, o] of Object.entries(ops)) {
+    if (!TIER.has(o.tier)) out.push({ type: `person:${op}`, problem: 'person op without a tier' });
+    if (!schemas.has(o.schema)) out.push({ type: `person:${op}`, problem: 'person op without a body schema' });
+    if ((o.secret ?? []).length && o.tier !== 'local') out.push({ type: `person:${op}`, problem: 'a person op with secret fields must be tier local' });
+  }
+  return out;
+}
+
 // The whole catalogue, as if everything were emitted: what the pack still
 // owes. declaredOnly kinds warn here; they are only checked for real once a
 // node emits them (--emitted).
@@ -48,7 +60,7 @@ export function audit() {
   const ks = Object.entries(catalogue.types);
   const f = check({ types: ks.filter(([, c]) => !c.decision).map(([k]) => k), decisionKinds: ks.filter(([, c]) => c.decision).map(([k]) => k) });
   for (const x of f) if (catalogue.types[x.type]?.declaredOnly && x.problem === 'no schema') x.warning = `declared, not emitted (${catalogue.types[x.type].declaredOnly})`;
-  return f;
+  return [...f, ...checkPersonOps()];
 }
 export const failing = (findings, { strict = false } = {}) => findings.filter((f) => strict || !f.warning);
 

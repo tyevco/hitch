@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { makeValidator, loadPack } from '../conformance/lib/schema.mjs';
-import { check, catalogue, failing, audit } from '../conformance/catalog-check.mjs';
+import { check, catalogue, failing, audit, checkPersonOps } from '../conformance/catalog-check.mjs';
 
 const V = makeValidator();
 const codes = JSON.parse(readFileSync(new URL('../codes.json', import.meta.url)));
@@ -84,6 +84,12 @@ test('the whole-catalogue audit has no failing gaps: every first-party kind has 
   assert.deepEqual(failing(f).map((x) => `${x.type}: ${x.problem}`), []);
   assert.ok(f.some((x) => x.warning?.startsWith('declared, not emitted')), 'declared-only kinds still show');
   assert.equal(failing(check({ decisionKinds: ['queue.plan@1'] })).length, 1, 'emitting a declared-only kind without a schema fails the gate');
+});
+
+test('person ops: every op needs a tier and a body schema, and a secret-bearing op must be local', () => {
+  assert.deepEqual(checkPersonOps(), []);
+  const f = checkPersonOps({ 'connectors.secret': { tier: 'confirm', schema: 'hitch.person.test.echo', secret: ['token'] }, 'x.y': { tier: 'root', schema: 'nope' } });
+  assert.deepEqual(f.map((x) => x.problem).sort(), ['a person op with secret fields must be tier local', 'person op without a body schema', 'person op without a tier'].sort());
 });
 
 test('catalog-check (sdk:check) flags missing schemas, missing tiers and tiers below floor', () => {

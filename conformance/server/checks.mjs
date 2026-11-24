@@ -690,7 +690,60 @@ export const CHECKS = [
       const ev = (await c.poll(open.cursor)).body.events.find((e) => e.type === 'hitch.changed@1' && e.data.id === later && e.data.state === 'open');
       assert.ok(ev, 'and its owner mod is told');
     } },
+
+  // ---- person ops ----------------------------------------------------------------------------
+  { id: 'person-op-guarded', profile: 'person', title: 'person ops: clients only, at the op tier with presence; op must match the path; unknown ops refused', needs: ['enablePersonTestOps'],
+    async run(ctx) {
+      await ctx.adapter.enablePersonTestOps();
+      const call = (who, extra = {}, opts = {}) => personCall(ctx, who, 'test.echo', { text: 'hi', secret: 'x' }, extra, opts);
+      for (const who of ['mod', 'session']) refused(await call(who, {}, { presence: false }), 'not_a_client', `${who}:`);
+      refused(await call('clientDecide', {}, { presence: false }), 'tier', 'decide client on a local op:');
+      if (ctx.P.clientLocal) refused(await call('clientLocal', {}, { presence: false }), 'step_up_required');
+      refused(await personCall(ctx, 'clientLocal', 'test.echo', { text: 'hi', secret: 'x' }, { op: 'test.other' }), 'invalid', 'op != path:');
+      refused(await personCall(ctx, 'clientLocal', 'nope.nothing', { a: 1 }), 'unknown_type');
+      refused(await personCall(ctx, 'clientLocal', 'test.echo', { text: 'hi' }), 'invalid', 'body schema:');
+    } },
+  { id: 'person-op-secret-stays-out', profile: 'person', title: 'a person op runs with presence, and its secret never reaches an event or an audit line', needs: ['enablePersonTestOps', 'requestDecision'],
+    async run(ctx) {
+      if (!ctx.P.clientLocal) throw new Skip('adapter has no clientLocal');
+      await ctx.adapter.enablePersonTestOps();
+      const id = await ctx.adapter.requestDecision({ kind: 'kernel.connector.signin@1', args: { connector: 'm365', account: 'me', scopes: ['mail'] } });
+      const start = (await ctx.as('clientDecide').list('decisions')).body.cursor;
+      const r = await personCall(ctx, 'clientLocal', 'test.echo', { text: 'hello', secret: 'SEKRET-7f3a9' }, { for: id });
+      assert.equal(r.status, 200, JSON.stringify(r.body));
+      assert.deepEqual(r.body.result, { echo: 'hello', secretLength: 12 });
+      const evs = JSON.stringify((await ctx.as('clientLocal').poll(start)).body.events);
+      assert.ok(!evs.includes('SEKRET'), 'no secret in the stream');
+      const au = JSON.stringify((await ctx.as('clientLocal').get(`/hitch/v1/decisions/${id}/audit`)).body);
+      assert.ok(!au.includes('SEKRET'), 'no secret in the audit');
+      const d = (await ctx.as('clientDecide').decision(id)).body;
+      assert.equal(d.outcome, 'applied', '`for` closes the decision that asked');
+      assert.equal(d.answered.by, `client:${ctx.P.clientLocal.cid}`);
+      const other = await ctx.adapter.requestDecision(plain);
+      refused(await personCall(ctx, 'clientLocal', 'test.echo', { text: 'x', secret: 'y' }, { for: other }), 'invalid', 'for: a kind the op does not close:');
+    } },
+  { id: 'person-op-replay', profile: 'person', title: 'a person op call is single-use and short-lived', needs: ['enablePersonTestOps'],
+    async run(ctx) {
+      if (!ctx.P.clientLocal) throw new Skip('adapter has no clientLocal');
+      await ctx.adapter.enablePersonTestOps();
+      const { commandBody } = await import('../lib/wire.mjs');
+      const pr = ctx.P.clientLocal.presence;
+      const b = commandBody({ presenceKey: pr.key, presenceKid: pr.kid, extra: { op: 'test.echo', body: { text: 'a', secret: 'b' } } });
+      const api = ctx.as('clientLocal');
+      assert.equal((await api.post('/hitch/v1/person/test.echo', b)).status, 200);
+      refused(await api.post('/hitch/v1/person/test.echo', b), 'replay', 'same nonce:');
+      const long = commandBody({ presenceKey: pr.key, presenceKid: pr.kid, ttl: 600, extra: { op: 'test.echo', body: { text: 'a', secret: 'b' } } });
+      refused(await api.post('/hitch/v1/person/test.echo', long), 'replay', 'exp - iat > 120:');
+    } },
 ];
+
+async function personCall(ctx, who, op, body, extra = {}, { presence = true } = {}) {
+  const { commandBody } = await import('../lib/wire.mjs');
+  const cred = ctx.P[who];
+  const pr = presence ? cred?.presence : undefined;
+  const b = commandBody({ presenceKey: pr?.key, presenceKid: pr?.kid, extra: { op, body, ...extra } });
+  return ctx.as(who).post(`/hitch/v1/person/${op}`, b);
+}
 
 // A relaying impostor: forwards every request to the real node, rewriting JSON responses.
 async function relay(target, rewrite) {
