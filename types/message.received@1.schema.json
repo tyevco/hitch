@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hitch.dev/types/message.received@1.schema.json",
+  "title": "message.received@1",
+  "description": "A message arrived for the envelope's to. privacy text: a client below text gets {withheld:true}; a session sees only messages to itself.",
+  "type": "object",
+  "properties": {
+    "message": { "type": "string", "pattern": "^msg_" },
+    "intent": { "enum": ["message", "task"] },
+    "text": { "type": "string", "maxLength": 8000 },
+    "withheld": { "const": true }
+  }
+}

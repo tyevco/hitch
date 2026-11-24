@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hitch.dev/types/hitch.message.state.schema.json",
+  "title": "POST /hitch/v1/messages/:id/state",
+  "description": "The addressee session reports delivery. States only move forward: queued, sent, seen, acked. held, failed, expired and disputed are set by the node or a transport.",
+  "type": "object",
+  "required": ["state"],
+  "properties": { "state": { "enum": ["sent", "seen", "acked"] } },
+  "additionalProperties": false
+}

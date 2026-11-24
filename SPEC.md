@@ -270,7 +270,7 @@ flowchart TD
 
 **Closed refusal codes:** `not_a_client, tier, scope, step_up_required, stale, already, gone, withdrawn, expired, replay, revoked, gap, unknown_type, privacy, rate, suite, unauthenticated, invalid`. Each has a fixed HTTP status in [`codes.json`](codes.json).
 
-**The kit is built** (P0): [`types/`](types), [`codes.json`](codes.json), [`catalogue.json`](catalogue.json) and [`conformance/`](conformance/README.md): `hitch-check` (server, 43 checks over core, decisions, pairing and feeds), `hitch-client-check` with `hitch-mock` (client, 12 checks) and `hitch-catalog-check` (the `sdk:check` gate). The kit tests itself against an in-repo toy node and naive client, each with planted bugs that must turn their checks red. A Python stdlib client kit for pairview (`conformance/python/`) runs the same client checks over the hmac suite.
+**The kit is built** (P0): [`types/`](types), [`codes.json`](codes.json), [`catalogue.json`](catalogue.json) and [`conformance/`](conformance/README.md): `hitch-check` (server, 49 checks over core, decisions, pairing, feeds and messaging), `hitch-client-check` with `hitch-mock` (client, 12 checks) and `hitch-catalog-check` (the `sdk:check` gate). The kit tests itself against an in-repo toy node and naive client, each with planted bugs that must turn their checks red. A Python stdlib client kit for pairview (`conformance/python/`) runs the same client checks over the hmac suite.
 
 **Profiles:** `core` (required: discovery, hello, lists, events, pair), `decisions`, `feeds`, `messaging`, `tasks`, `push`, `relay`, `federation`. `/.well-known` may claim only the profiles that passed.
 
@@ -318,6 +318,10 @@ Pinned 2026-11-23 with the reference client. The kit's [`conformance/lib/wire.mj
 | Gap | a cursor older than retention is `410 {code:"gap", resync:[…]}` on both long-poll and SSE connect |
 | Refusal | [`hitch.refusal`](types/hitch.refusal.schema.json): `{spec, code, message?, winner?, resync?, current?, retryAfter?}`, HTTP status fixed per code |
 | Content | `GET /hitch/v1/content/:hash` → raw bytes, the stored Content-Type, header `hitch-digest`. Clients hash what they got and compare with the preview row's `digest`; the header is not trusted |
+
+**Messaging.** `POST /hitch/v1/messages` takes [`hitch.message.post`](types/hitch.message.post.schema.json) `{to, intent?, text, replyTo?, idem?}` and is **person-authored only**: mods and sessions get `not_a_client` (agents publish their own types). `from` is stamped; a body `from` is ignored. A repeated `idem` from the same client returns the first message. The node emits `message.received@1` with the envelope `to`. **A session sees only events and messages addressed to itself** (plus untargeted events), never another session's. Delivery moves forward only (`queued → sent → seen → acked`) through `POST /hitch/v1/messages/:id/state {state}`, which **only the addressee session** may call (`scope` otherwise; `invalid` going backwards), and each step emits `message.delivery@1`. `held`, `failed`, `expired` and `disputed` are set by the node or a transport.
+
+**Privacy redaction.** A client whose privacy class is below an event's sees that event with `data: {withheld: true}`, re-signed by the node. A message it lists has no `text` and carries `withheld: true`. A feed above its class gives `privacy`.
 
 **Pairing wire.** All three routes are unauthenticated and rate-limited; the pairing id is the capability.
 

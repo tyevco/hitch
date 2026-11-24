@@ -330,7 +330,7 @@ export function createNode({ store = createStore(), clock = { now: () => Date.no
 
   // ---- HTTP ------------------------------------------------------------------------------
   const lists = { decisions: () => [...store.decisions.values()].map((r) => r.d), items: () => [...store.items.values()],
-    sessions: () => [...store.sessions.values()], messages: () => [...store.messages.values()],
+    sessions: () => [...store.sessions.values()], messages: (p) => [...store.messages.values()].map((m) => messageView(p, m)).filter(Boolean),
     clients: () => [...store.clients.values()].map(clientView) };
 
   function send(res, status, obj, headers = {}) {
@@ -359,7 +359,7 @@ export function createNode({ store = createStore(), clock = { now: () => Date.no
       sweepExpiry();
       if (req.method === 'GET' && path === '/.well-known/hitch') {
         return send(res, 200, { specs: [SPEC], impl: { name: 'toy-node', version: '0.1.0' }, aid, caps: ['sse', 'longpoll'],
-          profiles: ['core', 'decisions', 'pairing', 'feeds'], suites: ['hmac-sha256', 'p256', 'ed25519'],
+          profiles: ['core', 'decisions', 'pairing', 'feeds', 'messaging'], suites: ['hmac-sha256', 'p256', 'ed25519'],
           nodeKey: { suite: 'ed25519', kid, x: nodeKey.pub } });
       }
       if (req.method === 'POST' && path === '/hitch/v1/clients/pairings') return send(res, 202, pairStart(body));
@@ -385,7 +385,7 @@ export function createNode({ store = createStore(), clock = { now: () => Date.no
       }
       const lm = path.match(/^\/hitch\/v1\/(decisions|items|sessions|messages|clients)$/);
       if (req.method === 'GET' && lm) {
-        let list = lists[lm[1]]();
+        let list = lists[lm[1]](p);
         const st = url.searchParams.get('state'); if (st) list = list.filter((x) => x.state === st);
         const k = url.searchParams.get('kind'); if (k) list = list.filter((x) => x.kind === k);
         if (lm[1] === 'decisions') list = list.map((d) => sign(viewFor(p, d)));
@@ -409,7 +409,10 @@ export function createNode({ store = createStore(), clock = { now: () => Date.no
         const from = bugs.trustBodyFrom && b.from ? b.from : { aid, principal: p.principal };
         return send(res, 200, emit(b.type, b.data ?? {}, { subject: b.subject, to: b.to, from }));
       }
-      if (req.method === 'GET' && path === '/hitch/v1/events') return events(req, res, url);
+      if (req.method === 'GET' && path === '/hitch/v1/events') return events(req, res, url, p);
+      if (req.method === 'POST' && path === '/hitch/v1/messages') return send(res, 200, postMessage(p, body));
+      const ms = path.match(/^\/hitch\/v1\/messages\/(msg_[0-9A-Z]+)\/state$/);
+      if (req.method === 'POST' && ms) return send(res, 200, messageState(p, ms[1], body));
       const rv = path.match(/^\/hitch\/v1\/clients\/(c_[A-Za-z0-9]+)\/revoke$/);
       if (req.method === 'POST' && rv) return send(res, 200, revokeOne(p, rv[1], body));
       if (req.method === 'POST' && path === '/hitch/v1/clients/revoke-all') return send(res, 200, revokeAll(p, body));
@@ -440,27 +443,80 @@ export function createNode({ store = createStore(), clock = { now: () => Date.no
     }
   }
 
-  function events(req, res, url) {
+  // What a principal may see of an event: a session sees only its own to:{session}
+  // traffic (and untargeted events); a client sees everything, with data above
+  // its privacy class withheld. Redacted copies are re-signed.
+  const PRIV = ['public', 'counts', 'meta', 'text', 'secret'];
+  function visible(p, e) {
+    if (bugs.noEventFilter) return e;
+    const sid = p.principal.startsWith('session:') ? p.principal.slice(8) : null;
+    if (e.to?.session && sid !== null && e.to.session !== sid) return null;
+    if (p.client && PRIV.indexOf(e.privacy) > PRIV.indexOf(p.client.privacy)) {
+      const { sig, ...rest } = e;
+      return sign({ ...rest, data: { withheld: true } });
+    }
+    return e;
+  }
+
+  function events(req, res, url, p) {
     const sse = (req.headers.accept ?? '').includes('text/event-stream');
     const after = Number(req.headers['last-event-id'] ?? url.searchParams.get('after') ?? store.seq);
-    const backlog = eventsAfter(after);
+    const raw = eventsAfter(after);
+    const backlog = raw.map((e) => visible(p, e)).filter(Boolean);
     if (!sse) {
       const wait = Math.min(Number(url.searchParams.get('wait') ?? 0), 25);
-      if (backlog.length || !wait) return send(res, 200, { spec: SPEC, events: backlog, cursor: backlog.at(-1)?.seq ?? Math.max(after, 0) });
+      const cursor = raw.at(-1)?.seq ?? Math.max(after, 0);
+      if (raw.length || !wait) return send(res, 200, { spec: SPEC, events: backlog, cursor });
       const t = setTimeout(() => { timers.delete(t); listeners.delete(l); send(res, 200, { spec: SPEC, events: [], cursor: after }); }, wait * 1000);
       timers.add(t);
-      const l = (e) => { clearTimeout(t); timers.delete(t); listeners.delete(l); send(res, 200, { spec: SPEC, events: [e], cursor: e.seq }); };
+      const l = (e0) => { const e = visible(p, e0); clearTimeout(t); timers.delete(t); listeners.delete(l); send(res, 200, { spec: SPEC, events: e ? [e] : [], cursor: e0.seq }); };
       listeners.add(l);
       res.on('close', () => { clearTimeout(t); timers.delete(t); listeners.delete(l); });
       return;
     }
     res.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-store' });
-    const write = (e) => res.write(`id: ${e.seq}\nevent: ${e.type}\ndata: ${JSON.stringify(e)}\n\n`);
-    backlog.forEach(write);
+    const write = (e0) => { const e = visible(p, e0); if (e) res.write(`id: ${e.seq}\nevent: ${e.type}\ndata: ${JSON.stringify(e)}\n\n`); };
+    raw.forEach(write);
     const beat = setInterval(() => res.write(`event: hitch.beat@1\ndata: ${JSON.stringify({ spec: SPEC, type: 'hitch.beat@1', data: { head: store.seq } })}\n\n`), beatMs);
     timers.add(beat);
     listeners.add(write);
     res.on('close', () => { clearInterval(beat); timers.delete(beat); listeners.delete(write); });
+  }
+
+  // ---- messages ------------------------------------------------------------------------
+  const STATES = ['queued', 'sent', 'seen', 'acked'];
+  function messageView(p, m) {
+    if (p.client && PRIV.indexOf('text') > PRIV.indexOf(p.client.privacy)) { const { text, ...rest } = m; return { ...rest, withheld: true }; }
+    const sid = p.principal.startsWith('session:') ? p.principal.slice(8) : null;
+    if (sid !== null && m.to.session !== sid) return null;
+    return m;
+  }
+  function postMessage(p, body) {
+    if (!p.client) throw new Refusal('not_a_client', { message: 'POST /messages is person-authored; agents publish their own types' });
+    const b = JSON.parse(body || '{}');
+    const e = V.validate('hitch.message.post', b);
+    if (e.length) throw new Refusal('invalid', { message: e.join('; ') });
+    if (b.idem) { const prior = [...store.messages.values()].find((m) => m.idem === b.idem && m.from.principal === p.principal); if (prior) return prior; }
+    const id = 'msg_' + randomUlid();
+    const m = { spec: SPEC, id, from: { aid, principal: p.principal, ...(p.client.device ? { device: p.client.device } : {}) }, to: b.to,
+      intent: b.intent ?? 'message', text: b.text, state: 'queued', time: iso(now()), ...(b.idem ? { idem: b.idem } : {}), ...(b.replyTo ? { replyTo: b.replyTo } : {}) };
+    store.messages.set(id, m);
+    emit('message.received@1', { message: id, intent: m.intent, text: m.text }, { subject: `message/${id}`, to: b.to, from: m.from, privacy: 'text' });
+    changed('messages', id, 1, 'create', 'queued');
+    return m;
+  }
+  function messageState(p, id, body) {
+    const m = store.messages.get(id);
+    if (!m) throw new Refusal('gone');
+    const b = JSON.parse(body || '{}');
+    const e = V.validate('hitch.message.state', b);
+    if (e.length) throw new Refusal('invalid', { message: e.join('; ') });
+    if (p.principal !== `session:${m.to.session}` && !bugs.anyoneAcks) throw new Refusal('scope', { message: 'only the addressee reports delivery' });
+    if (STATES.indexOf(b.state) <= STATES.indexOf(m.state)) throw new Refusal('invalid', { message: 'delivery state only moves forward' });
+    m.state = b.state;
+    emit('message.delivery@1', { message: id, state: b.state }, { subject: `message/${id}`, from: { aid, principal: p.principal }, privacy: 'meta' });
+    changed('messages', id, STATES.indexOf(b.state) + 1, 'update', b.state);
+    return m;
   }
 
   const server = http.createServer((req, res) => { handle(req, res); });

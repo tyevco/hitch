@@ -20,7 +20,8 @@ export default {
   async teardown() {},
   async principals() {
     return {
-      mod: { token },  app: { token },  session: { token },     // Bearer credentials
+      mod: { token },  app: { token },  session: { sid, token },  // Bearer credentials
+      session2: { sid, token },                                  // optional: a second session (scope checks)
       clientDecide:  { cid, key },                              // key: {suite, privateKey} (node KeyObject) or {suite:'hmac-sha256', secret}
       clientDecide2: { cid, key },                              // optional: a second decide client
       clientConfirm: { cid, key, presence: { kid, key } },      // ceiling confirm, presence key p256
@@ -55,8 +56,9 @@ The toy node's adapter, [`example/toy-adapter.mjs`](example/toy-adapter.mjs), is
 | decisions | decision-signed, not-a-client, decide-answer, tier, narrow-decline, step-up, local-step-up, suite, stale, one-winner, answer-replay, answer-window, verb-offered, revoked, waits-forever, expiry-never-approves, no-safety-default, grant-safety |
 | pairing | pairing-sas, pairing-impostor, pairing-commit, agent-bootstrap, pairing-approve, pairing-presence, revoke-self, revoke-other, revoke-all (always runs last: it revokes the adapter's clients) |
 | feeds | feed-read, feed-changed, feed-guards |
+| messaging | message-post, message-idem, message-person-only, message-session-scope, message-delivery, message-privacy |
 
-Not yet covered: messaging, tasks, push, relay, federation, privacy classes on events, the attention ladder, and the OS-dialog bootstrap (it needs a human). 
+Not yet covered: tasks, push, relay, federation, privacy classes on events, the attention ladder, and the OS-dialog bootstrap (it needs a human). 
 
 ## Client suite: writing an adapter
 

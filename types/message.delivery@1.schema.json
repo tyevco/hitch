@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hitch.dev/types/message.delivery@1.schema.json",
+  "title": "message.delivery@1",
+  "type": "object",
+  "properties": {
+    "message": { "type": "string", "pattern": "^msg_" },
+    "state": { "enum": ["queued", "sent", "seen", "acked", "held", "failed", "expired", "disputed"] },
+    "withheld": { "const": true }
+  }
+}

@@ -3,13 +3,35 @@
   "$id": "https://hitch.dev/types/hitch.message.post.schema.json",
   "title": "POST /hitch/v1/messages (person-authored)",
   "type": "object",
-  "required": ["to", "text"],
+  "required": [
+    "to",
+    "text"
+  ],
   "properties": {
-    "to": { "$ref": "hitch.defs.schema.json#/$defs/to" },
-    "intent": { "enum": ["message", "task"] },
-    "text": { "type": "string", "minLength": 1, "maxLength": 8000 },
-    "replyTo": { "type": "string" },
-    "idem": { "type": "string", "maxLength": 200 }
+    "to": {
+      "$ref": "hitch.defs.schema.json#/$defs/to"
+    },
+    "intent": {
+      "enum": [
+        "message",
+        "task"
+      ]
+    },
+    "text": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 8000
+    },
+    "replyTo": {
+      "type": "string"
+    },
+    "idem": {
+      "type": "string",
+      "maxLength": 200
+    },
+    "from": {
+      "description": "Ignored: the node stamps from from the credential (Principle 6). Accepted so old clients are not refused."
+    }
   },
   "additionalProperties": false
 }

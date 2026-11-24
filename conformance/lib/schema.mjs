@@ -100,7 +100,8 @@ export function makeValidator(pack = loadPack()) {
     const errs = validate('hitch.envelope', env);
     if (errs.length) return errs;
     if (Buffer.byteLength(JSON.stringify(env.data ?? {})) > 8192) errs.push('$.data: larger than 8 KB; use ref');
-    if (pack.has(`${env.type}.schema.json`)) errs.push(...validate(env.type, env.data ?? {}).map((e) => e.replace(/^\$/, '$.data')));
+    const redacted = env.data && Object.keys(env.data).length === 1 && env.data.withheld === true; // privacy redaction
+    if (!redacted && pack.has(`${env.type}.schema.json`)) errs.push(...validate(env.type, env.data ?? {}).map((e) => e.replace(/^\$/, '$.data')));
     return errs;
   }
 

@@ -478,6 +478,75 @@ export const CHECKS = [
       refused(await connect(ctx.url, ctx.aid, low).get('/hitch/v1/feeds/wins.weekly@1'), 'privacy', 'meta client, text feed:');
       refused(await connect(ctx.url, ctx.aid, null).get('/hitch/v1/feeds/kernel.connectors@1'), 'unauthenticated');
     } },
+
+  // ---- messaging -----------------------------------------------------------------------------
+  { id: 'message-post', profile: 'messaging', title: 'a person-client posts a message to a session: from is stamped, it is listed, and the session receives message.received@1',
+    async run(ctx) {
+      const c = ctx.as('clientDecide');
+      const start = (await c.list('messages')).body.cursor;
+      const r = await c.post('/hitch/v1/messages', { to: { session: ctx.P.session.sid }, intent: 'task', text: 'Please rebase on main', from: { aid: 'evil01', principal: 'node' } });
+      assert.equal(r.status, 200, JSON.stringify(r.body)); ok('hitch.message@1', r.body);
+      assert.match(r.body.from.principal, /^client:/, 'from stamped from the credential');
+      assert.equal(r.body.state, 'queued');
+      assert.ok((await c.list('messages')).body.list.some((m) => m.id === r.body.id), 'listed');
+      const ev = (await ctx.as('session').poll(start)).body.events.find((e) => e.type === 'message.received@1' && e.data.message === r.body.id);
+      assert.ok(ev, 'the addressed session sees message.received@1');
+      assert.deepEqual(V.validateEnvelope(ev), []);
+      assert.equal(ev.data.text, 'Please rebase on main');
+      assert.equal(ev.to.session, ctx.P.session.sid);
+    } },
+  { id: 'message-idem', profile: 'messaging', title: 'posting twice with the same idem gives the same message, not a duplicate',
+    async run(ctx) {
+      const c = ctx.as('clientDecide');
+      const body = { to: { session: ctx.P.session.sid }, text: 'once', idem: 'hitch-check:' + Date.now() };
+      const a = await c.post('/hitch/v1/messages', body), b = await c.post('/hitch/v1/messages', body);
+      assert.equal(a.status, 200); assert.equal(b.body.id, a.body.id);
+      assert.equal((await c.list('messages')).body.list.filter((m) => m.idem === body.idem).length, 1);
+    } },
+  { id: 'message-person-only', profile: 'messaging', title: 'mods and sessions cannot post person-authored messages',
+    async run(ctx) {
+      for (const who of ['mod', 'session']) refused(await ctx.as(who).post('/hitch/v1/messages', { to: { session: ctx.P.session.sid }, text: 'x' }), 'not_a_client', `${who}:`);
+    } },
+  { id: 'message-session-scope', profile: 'messaging', title: 'another session neither lists nor receives a message to someone else',
+    async run(ctx) {
+      if (!ctx.P.session2) throw new Skip('adapter has no session2 principal');
+      const start = (await ctx.as('clientDecide').list('messages')).body.cursor;
+      const r = await ctx.as('clientDecide').post('/hitch/v1/messages', { to: { session: ctx.P.session.sid }, text: 'for s-test only' });
+      const other = ctx.as('session2');
+      assert.ok(!(await other.list('messages')).body.list.some((m) => m.id === r.body.id), 'not listed for another session');
+      const evs = (await other.poll(start)).body.events;
+      assert.ok(!evs.some((e) => e.data?.message === r.body.id && e.type === 'message.received@1'), 'not streamed to another session');
+      assert.ok(!JSON.stringify(evs).includes('for s-test only'), 'text never reaches another session');
+    } },
+  { id: 'message-delivery', profile: 'messaging', title: 'only the addressee moves delivery forward; the person sees message.delivery@1',
+    async run(ctx) {
+      const c = ctx.as('clientDecide');
+      const m = (await c.post('/hitch/v1/messages', { to: { session: ctx.P.session.sid }, text: 'ack me' })).body;
+      const start = (await c.list('messages')).body.cursor;
+      refused(await c.post(`/hitch/v1/messages/${m.id}/state`, { state: 'acked' }), 'scope', 'a client:');
+      if (ctx.P.session2) refused(await ctx.as('session2').post(`/hitch/v1/messages/${m.id}/state`, { state: 'acked' }), 'scope', 'another session:');
+      const s = ctx.as('session');
+      assert.equal((await s.post(`/hitch/v1/messages/${m.id}/state`, { state: 'seen' })).status, 200);
+      refused(await s.post(`/hitch/v1/messages/${m.id}/state`, { state: 'sent' }), 'invalid', 'backwards:');
+      const r = await s.post(`/hitch/v1/messages/${m.id}/state`, { state: 'acked' });
+      assert.equal(r.body.state, 'acked');
+      const evs = (await c.poll(start)).body.events.filter((e) => e.type === 'message.delivery@1' && e.data.message === m.id);
+      assert.deepEqual(evs.map((e) => e.data.state), ['seen', 'acked']);
+      assert.equal((await c.list('messages')).body.list.find((x) => x.id === m.id).state, 'acked');
+    } },
+  { id: 'message-privacy', profile: 'messaging', title: 'a client below the text class sees messages and events with the text withheld', needs: ['mintClient'],
+    async run(ctx) {
+      const low = connect(ctx.url, ctx.aid, await ctx.adapter.mintClient({ ceiling: 'decide', privacy: 'meta' }));
+      const start = (await low.list('messages')).body.cursor;
+      const m = (await ctx.as('clientDecide').post('/hitch/v1/messages', { to: { session: ctx.P.session.sid }, text: 'PRIVATE TEXT' })).body;
+      const l = (await low.list('messages')).body.list.find((x) => x.id === m.id);
+      assert.ok(l, 'listed'); assert.equal(l.text, undefined); assert.equal(l.withheld, true);
+      const evs = (await low.poll(start)).body.events;
+      assert.ok(!JSON.stringify(evs).includes('PRIVATE TEXT'), 'no text in the stream');
+      const ev = evs.find((e) => e.type === 'message.received@1');
+      assert.deepEqual(ev?.data, { withheld: true });
+      assert.ok(ctx.verify(ev), 'redacted events are re-signed');
+    } },
 ];
 
 // A relaying impostor: forwards every request to the real node, rewriting JSON responses.

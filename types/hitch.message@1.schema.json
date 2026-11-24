@@ -3,18 +3,65 @@
   "$id": "https://hitch.dev/types/hitch.message@1.schema.json",
   "title": "hitch.message@1",
   "type": "object",
-  "required": ["spec", "id", "from", "to", "state", "time"],
+  "required": [
+    "spec",
+    "id",
+    "from",
+    "to",
+    "state",
+    "time"
+  ],
   "properties": {
-    "spec": { "$ref": "hitch.defs.schema.json#/$defs/spec" },
-    "id": { "type": "string", "pattern": "^msg_[0-9A-HJKMNP-TV-Z]{26}$" },
-    "from": { "$ref": "hitch.defs.schema.json#/$defs/from" },
-    "to": { "$ref": "hitch.defs.schema.json#/$defs/to" },
-    "intent": { "enum": ["message", "task"] },
-    "text": { "type": "string", "maxLength": 8000 },
-    "ref": { "$ref": "hitch.defs.schema.json#/$defs/ref" },
-    "replyTo": { "type": "string" },
-    "idem": { "type": "string" },
-    "state": { "enum": ["queued", "sent", "seen", "acked", "held", "failed", "expired", "disputed"] },
-    "time": { "$ref": "hitch.defs.schema.json#/$defs/time" }
+    "spec": {
+      "$ref": "hitch.defs.schema.json#/$defs/spec"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^msg_[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "from": {
+      "$ref": "hitch.defs.schema.json#/$defs/from"
+    },
+    "to": {
+      "$ref": "hitch.defs.schema.json#/$defs/to"
+    },
+    "intent": {
+      "enum": [
+        "message",
+        "task"
+      ]
+    },
+    "text": {
+      "type": "string",
+      "maxLength": 8000
+    },
+    "ref": {
+      "$ref": "hitch.defs.schema.json#/$defs/ref"
+    },
+    "replyTo": {
+      "type": "string"
+    },
+    "idem": {
+      "type": "string"
+    },
+    "state": {
+      "enum": [
+        "queued",
+        "sent",
+        "seen",
+        "acked",
+        "held",
+        "failed",
+        "expired",
+        "disputed"
+      ]
+    },
+    "time": {
+      "$ref": "hitch.defs.schema.json#/$defs/time"
+    },
+    "withheld": {
+      "const": true,
+      "description": "text exists but the reader's privacy class is below text"
+    }
   }
 }

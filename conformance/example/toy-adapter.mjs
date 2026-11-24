@@ -20,7 +20,8 @@ export function toyAdapter({ bugs = {} } = {}) {
       P = {
         mod: { token: node.addToken('mod:wins', { owner: 'wins' }) },
         app: { token: node.addToken('app:herdr-teams', { owner: 'herdr-teams' }) },
-        session: { token: node.addToken('session:s-test', { owner: 'session' }) },
+        session: { sid: 's-test', token: node.addToken('session:s-test', { owner: 'session' }) },
+        session2: { sid: 's-other', token: node.addToken('session:s-other', { owner: 'session' }) },
         clientDecide: mk({ ceiling: 'decide' }),
         clientDecide2: mk({ ceiling: 'decide', device: 'phone' }),
         clientConfirm: mk({ ceiling: 'confirm', suite: 'p256' }, confirmP),
