@@ -379,8 +379,8 @@ export const CHECKS = [
   { id: 'reaches-out-is-a-send', profile: 'decisions', title: 'a parley send that leaves the machine is a safety send at confirm, and a grant covers only the local ones', needs: ['issueGrant'],
     async run({ adapter, url, aid, as }) {
       const g = connect(url, aid, await adapter.issueGrant({ kinds: ['parley.send@1'] }));
-      const here = await adapter.requestDecision({ kind: 'parley.send@1', args: { to: 's-other' } });
-      const away = await adapter.requestDecision({ kind: 'parley.send@1', args: { to: 'aid:remote1' }, reachesOut: true });
+      const here = await adapter.requestDecision({ kind: 'parley.send@1', args: { to: 's-other', text: { content: 'sha256:' + '0'.repeat(64), bytes: 0 } } });
+      const away = await adapter.requestDecision({ kind: 'parley.send@1', args: { to: 'aid:remote1', text: { content: 'sha256:' + '0'.repeat(64), bytes: 0 } }, reachesOut: true });
       const dh = (await g.decision(here)).body, da = (await g.decision(away)).body;
       assert.equal(dh.safety, 'none'); assert.equal(dh.options.find((o) => o.verb === 'approve').tier, 'decide');
       assert.equal(da.safety, 'send', 'reachesOut raises safety to send');
