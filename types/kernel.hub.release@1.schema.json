@@ -2,11 +2,12 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://hitch.dev/types/kernel.hub.release@1.schema.json",
   "title": "kernel.hub.release@1 (decision kind, floor confirm, safety send): bound args",
-  "description": "Release a send this machine's mods staged for the team hub (inventory K13, K19; sendgate). During the overlap the args are the v2 Inbox item as it was shown (its text by ref) and the v2 action each option runs; the bind re-checks the live item at claim. Preview rows, in order: Who, Project, Effect, Note, Details. Options: approve 'Send' (confirm), decline 'Hold back' (narrow).",
+  "description": "Release a send this machine's mods staged for the team hub (inventory K13, K19; sendgate). During the overlap the args are the v2 Inbox item as it was shown (its text by ref) and the v2 action each option runs; the bind re-checks the live item at claim. Binds the exact staged bytes (payload). Preview rows, in order: Who, Project, Effect, Note, Details. Options: approve 'Send' (confirm), decline 'Hold back' (narrow). Known debt: the generic {title, text, who, project} shape binds the v2 Inbox item as shown, and must become real args by P7.",
   "type": "object",
   "required": [
     "title",
-    "text"
+    "text",
+    "payload"
   ],
   "properties": {
     "title": {
@@ -26,6 +27,10 @@
     },
     "v2": {
       "$ref": "hitch.defs.schema.json#/$defs/v2bridge"
+    },
+    "payload": {
+      "$ref": "hitch.defs.schema.json#/$defs/ref",
+      "description": "The staged envelope exactly as sendgate holds it (JCS), by content hash: re-checked at claim, so a payload changed under an unchanged preview is not sent"
     }
   },
   "additionalProperties": false

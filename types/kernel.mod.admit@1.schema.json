@@ -2,11 +2,12 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://hitch.dev/types/kernel.mod.admit@1.schema.json",
   "title": "kernel.mod.admit@1 (decision kind, floor local, safety grant): bound args",
-  "description": "Let a mod that is not built in use the background service (inventory K8). During the overlap the args are the v2 Inbox item as it was shown (its text by ref) and the v2 action each option runs; the bind re-checks the live item at claim. Preview rows, in order: Who, Project, Effect, Note, Details. Options: approve 'Let it in' (local), decline 'Refuse' (narrow).",
+  "description": "Let a mod that is not built in use the background service (inventory K8). During the overlap the args are the v2 Inbox item as it was shown (its text by ref) and the v2 action each option runs; the bind re-checks the live item at claim. Preview rows, in order: Who, Project, Effect, Note, Details. Options: approve 'Let it in' (local), decline 'Refuse' (narrow). Known debt: the generic {title, text, who, project} shape binds the v2 Inbox item as shown, and must become real args by P7.",
   "type": "object",
   "required": [
     "title",
-    "text"
+    "text",
+    "manifestHash"
   ],
   "properties": {
     "title": {
@@ -26,6 +27,10 @@
     },
     "v2": {
       "$ref": "hitch.defs.schema.json#/$defs/v2bridge"
+    },
+    "manifestHash": {
+      "$ref": "hitch.defs.schema.json#/$defs/hash",
+      "description": "The manifest admitted (registry.decide's hash): a manifest changed after the ask is not admitted"
     }
   },
   "additionalProperties": false

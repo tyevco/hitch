@@ -2,9 +2,8 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://hitch.dev/types/kernel.settings.confirm@1.schema.json",
   "title": "kernel.settings.confirm@1 (decision kind, floor local, safety grant): bound args",
-  "description": "Apply settings a session sent that the service did not write without the person (inventory K11, H6, H7, W3). During the overlap the args are the v2 Inbox item as it was shown (its text by ref) and the v2 action each option runs; the bind re-checks the live item at claim. Preview rows, in order: Who, Project, Effect, Note, Details {digest, ref, bytes}. Options: approve 'Apply' (local), decline 'Keep mine' (narrow). A kernel request may bind one setting by key instead (no text).",
+  "description": "Apply settings a session sent that the service did not write without the person (inventory K11, H6, H7, W3). During the overlap the args are the v2 Inbox item as it was shown (its text by ref) and the v2 action each option runs; the bind re-checks the live item at claim. Preview rows, in order: Who, Project, Effect, Note, Details {digest, ref, bytes}. Options: approve 'Apply' (local), decline 'Keep mine' (narrow). Binds the new values: one setting as {key, value}, or the item's settings as values (by ref) beside its title and text. Known debt: the generic {title, text, who, project} shape binds the v2 Inbox item as shown, and must become real args by P7.",
   "type": "object",
-  "required": [],
   "properties": {
     "title": {
       "type": "string",
@@ -28,7 +27,29 @@
       "type": "string",
       "maxLength": 200,
       "description": "The one setting a kernel request binds (keys for several are in the item text)"
+    },
+    "value": {
+      "description": "key's new value (small JSON)"
+    },
+    "values": {
+      "$ref": "hitch.defs.schema.json#/$defs/ref",
+      "description": "Every changed key's new value, JCS {key: value}, by ref"
     }
   },
-  "additionalProperties": false
+  "additionalProperties": false,
+  "anyOf": [
+    {
+      "required": [
+        "key",
+        "value"
+      ]
+    },
+    {
+      "required": [
+        "title",
+        "text",
+        "values"
+      ]
+    }
+  ]
 }

@@ -16,7 +16,7 @@ function refused(r, code, why = '') {
 }
 const plain = { kind: 'wins.confirm@1', args: { win: 'w1', title: 'Shipped hitch-check' } };       // decide, safety none
 const send = { kind: 'outbox.send@1', args: { draft: 42 } };          // confirm, safety send
-const local = { kind: 'kernel.settings.confirm@1', args: { key: 'x' } }; // local
+const local = { kind: 'kernel.settings.confirm@1', args: { key: 'x', value: true } }; // local
 
 // Each check: {id, profile, title, needs?: [adapter hooks], run(ctx)}
 export const CHECKS = [

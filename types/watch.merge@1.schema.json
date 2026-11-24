@@ -5,7 +5,8 @@
   "description": "Merge a pull request (inventory K1, W1). The head commit is bound: a push after the ask is a different decision, and the executor re-checks it at claim. Preview rows, in order: Pull request, Head, How. Options: merge 'Merge' (confirm), decline 'Not now' (narrow).",
   "type": "object",
   "required": [
-    "pr"
+    "pr",
+    "sha"
   ],
   "properties": {
     "pr": {
@@ -14,11 +15,15 @@
     },
     "sha": {
       "type": "string",
-      "maxLength": 64
+      "pattern": "^[0-9a-f]{7,64}$",
+      "description": "The head commit as the ask showed it: a push after the ask is no merge"
     },
     "method": {
-      "type": "string",
-      "maxLength": 40
+      "enum": [
+        "rebase",
+        "squash",
+        "merge"
+      ]
     },
     "v2": {
       "$ref": "hitch.defs.schema.json#/$defs/v2bridge"
