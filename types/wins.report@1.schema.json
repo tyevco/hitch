@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hitch.dev/types/wins.report@1.schema.json",
+  "title": "wins.report@1 (feed): the Weekly Status Report's state",
+  "description": "privacy text. Sending is the report.send@1 decision, not this feed.",
+  "type": "object",
+  "required": [
+    "week",
+    "state"
+  ],
+  "properties": {
+    "week": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
+    "state": {
+      "enum": [
+        "none",
+        "drafting",
+        "ready",
+        "waiting",
+        "sent",
+        "failed"
+      ]
+    },
+    "draft": {
+      "$ref": "hitch.defs.schema.json#/$defs/ref"
+    },
+    "decision": {
+      "type": "string",
+      "pattern": "^dec_",
+      "description": "the open report.send@1, when waiting"
+    },
+    "sentAt": {
+      "$ref": "hitch.defs.schema.json#/$defs/time"
+    }
+  },
+  "additionalProperties": false
+}

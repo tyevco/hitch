@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hitch.dev/types/message.answered@1.schema.json",
+  "title": "message.answered@1",
+  "description": "A reply to a message (replyTo names it). privacy text: a client below text gets {withheld:true}.",
+  "type": "object",
+  "properties": {
+    "message": {
+      "type": "string",
+      "pattern": "^msg_"
+    },
+    "replyTo": {
+      "type": "string",
+      "pattern": "^msg_"
+    },
+    "text": {
+      "type": "string",
+      "maxLength": 8000
+    },
+    "withheld": {
+      "const": true
+    }
+  }
+}

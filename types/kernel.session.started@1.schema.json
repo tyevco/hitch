@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hitch.dev/types/kernel.session.started@1.schema.json",
+  "title": "kernel.session.started@1",
+  "type": "object",
+  "required": [
+    "sid",
+    "aid",
+    "project",
+    "status"
+  ],
+  "properties": {
+    "sid": {
+      "type": "string"
+    },
+    "aid": {
+      "$ref": "hitch.defs.schema.json#/$defs/aid"
+    },
+    "member": {
+      "type": "string"
+    },
+    "project": {
+      "type": "string",
+      "maxLength": 200
+    },
+    "status": {
+      "enum": [
+        "started",
+        "busy",
+        "idle",
+        "waiting",
+        "ended"
+      ]
+    },
+    "doing": {
+      "type": "string",
+      "maxLength": 300
+    }
+  },
+  "additionalProperties": false,
+  "description": "A session started. privacy meta."
+}

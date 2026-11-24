@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hitch.dev/types/wins.weekly@1.schema.json",
+  "title": "wins.weekly@1 (feed): the week's wins",
+  "description": "privacy text.",
+  "type": "object",
+  "required": [
+    "week",
+    "wins"
+  ],
+  "properties": {
+    "week": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+      "description": "ISO date of the week's Monday"
+    },
+    "wins": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "date"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 300
+          },
+          "impact": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "project": {
+            "type": "string",
+            "maxLength": 120
+          },
+          "date": {
+            "type": "string",
+            "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+          },
+          "confirmed": {
+            "type": "boolean",
+            "description": "false until a wins.confirm@1 keeps it"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "status": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "kind",
+          "text"
+        ],
+        "properties": {
+          "kind": {
+            "enum": [
+              "progress",
+              "next",
+              "blocker",
+              "unplanned"
+            ]
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "ticket": {
+            "type": "string"
+          },
+          "days": {
+            "type": "number"
+          }
+        }
+      }
+    }
+  }
+}
