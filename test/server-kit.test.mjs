@@ -11,7 +11,7 @@ test('clean toy node passes every check and may claim core, decisions, pairing',
   const r = await runChecks(toyAdapter(), quiet);
   const bad = r.results.filter((x) => x.status !== 'pass').map((x) => `${x.id}: ${x.status} ${x.error?.message ?? x.why ?? ''}`);
   assert.deepEqual(bad, []);
-  assert.deepEqual(r.claimable.sort(), ['core', 'decisions', 'pairing']);
+  assert.deepEqual(r.claimable.sort(), ['core', 'decisions', 'feeds', 'pairing']);
   assert.deepEqual(r.overclaimed, []);
 });
 
@@ -23,6 +23,7 @@ const PLANTED = {
   expiryApproves: ['expiry-never-approves'],
   ignoreCeiling: ['tier', 'suite'],
   noNonceCheck: ['answer-replay'],
+  revokeOthersFree: ['revoke-other'],
   sasNoNodeKey: ['pairing-sas', 'pairing-impostor'],
 };
 for (const [bug, ids] of Object.entries(PLANTED)) {

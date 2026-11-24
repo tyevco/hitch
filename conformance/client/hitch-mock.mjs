@@ -55,6 +55,7 @@ export async function startMock({ ceiling = 'decide', suite = 'ed25519', privacy
     resign: (id) => { const k = genKey('ed25519'); tamper.set(id, (o) => signObject(o, k, `node:${node.aid}`)); },
     clearTamper: (id) => tamper.delete(id),
     putContent: (...a) => node.putContent(...a),
+    setFeed: (name, data) => node.setFeed(name, data),
     close: () => node.close(),
   };
 }

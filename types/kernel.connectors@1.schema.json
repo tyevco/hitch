@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hitch.dev/types/kernel.connectors@1.schema.json",
+  "title": "kernel.connectors@1 (feed): connector sign-in status",
+  "description": "Read-only status. Signing in is the kernel.connector.signin@1 decision, not this feed.",
+  "type": "object",
+  "required": ["connectors"],
+  "properties": {
+    "connectors": { "type": "array", "items": {
+      "type": "object", "required": ["id", "name", "state"],
+      "properties": {
+        "id": { "type": "string" }, "name": { "type": "string", "maxLength": 80 },
+        "state": { "enum": ["signed-in", "expired", "missing", "error"] },
+        "account": { "type": "string", "maxLength": 200 },
+        "since": { "$ref": "hitch.defs.schema.json#/$defs/time" },
+        "error": { "type": "string", "maxLength": 500 }
+      } } }
+  }
+}

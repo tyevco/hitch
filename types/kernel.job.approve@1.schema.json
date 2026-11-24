@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hitch.dev/types/kernel.job.approve@1.schema.json",
+  "title": "kernel.job.approve@1 (decision kind, floor confirm): bound args",
+  "description": "Approve a scheduled job. Preview rows, in order: Job, Schedule, Runs in, Tools, Model (optional), Prompt {digest, ref, bytes}. The client fetches the prompt by ref and checks its digest before enabling Approve. Options: approve (confirm), decline (narrow).",
+  "type": "object",
+  "required": ["job", "schedule", "cwd", "tools", "prompt"],
+  "properties": {
+    "job": { "type": "string", "maxLength": 120 },
+    "schedule": { "type": "string", "maxLength": 120 },
+    "cwd": { "type": "string", "maxLength": 1000 },
+    "tools": { "type": "array", "items": { "type": "string", "maxLength": 200 } },
+    "model": { "type": "string", "maxLength": 80 },
+    "prompt": { "$ref": "hitch.defs.schema.json#/$defs/ref" }
+  },
+  "additionalProperties": false
+}

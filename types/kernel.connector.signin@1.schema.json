@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hitch.dev/types/kernel.connector.signin@1.schema.json",
+  "title": "kernel.connector.signin@1 (decision kind, floor local, safety signin): bound args",
+  "description": "Sign a connector in as the person. Preview rows, in order: Connector, Account, Scopes. Options: approve (local), decline (narrow). Status lives in the kernel.connectors@1 feed.",
+  "type": "object",
+  "required": ["connector", "account", "scopes"],
+  "properties": {
+    "connector": { "type": "string", "maxLength": 80 },
+    "account": { "type": "string", "maxLength": 200 },
+    "scopes": { "type": "array", "items": { "type": "string", "maxLength": 200 } }
+  },
+  "additionalProperties": false
+}

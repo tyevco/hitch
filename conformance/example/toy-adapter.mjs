@@ -40,6 +40,12 @@ export function toyAdapter({ bugs = {} } = {}) {
     trimEvents: async (n) => node.trim(n),
     revokeClient: async (cid) => node.revokeClient(cid),
     issueGrant: wrap(({ kinds }) => ({ token: node.issueGrant({ kinds }) })),
+    mintClient: async ({ ceiling = 'decide', privacy = 'text', presence = false } = {}) => {
+      const pr = presence ? { kid: 'pk-' + Math.random().toString(36).slice(2, 8), key: genKey('p256') } : null;
+      const c = node.addClient({ ceiling, privacy, suite: pr ? 'p256' : 'ed25519', presence: pr ? [pr] : [] });
+      return { ...c, ...(pr ? { presence: pr } : {}) };
+    },
+    setFeed: async (name, data) => node.setFeed(name, data),
     publishType: async () => ({ type: 'wins.weekly@1', data: { week: '2026-W48' } }),
   };
 }

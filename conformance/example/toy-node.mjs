@@ -25,7 +25,7 @@ class Refusal extends Error {
 export function createStore() {
   return { seq: 0, events: [], floor: 0, decisions: new Map(), items: new Map(), sessions: new Map(),
     messages: new Map(), clients: new Map(), pairings: new Map(), grants: new Map(), audit: new Map(),
-    nonces: new Map(), executorCalls: new Map(), content: new Map() };
+    nonces: new Map(), executorCalls: new Map(), content: new Map(), feeds: new Map() };
 }
 
 export function createNode({ store = createStore(), clock = { now: () => Date.now() }, nodeKey = genKey('ed25519'),
@@ -227,6 +227,50 @@ export function createNode({ store = createStore(), clock = { now: () => Date.no
     return sign(viewFor(p, store.decisions.get(id).d));
   }
 
+  // ---- revoke --------------------------------------------------------------------------
+  // Self: free. Another client: confirm ceiling + presence. All: local + presence.
+  function checkPresence(c, b, need) {
+    if (tierRank(c.ceiling) < tierRank(need)) throw new Refusal('tier');
+    const pk = b.presence && c.presence.find((x) => x.kid === b.presence.kid);
+    if (!pk || !verifyBytes(pk.ver, presenceBytes(b), b.presence.v)) throw new Refusal('step_up_required');
+  }
+  function revokeBody(p, body) {
+    if (!p.client) throw new Refusal('not_a_client');
+    const b = JSON.parse(body || '{}');
+    const e = V.validate('hitch.revoke.request', b);
+    if (e.length) throw new Refusal('invalid', { message: e.join('; ') });
+    if (b.exp < b.iat || b.exp - b.iat > 120 || b.exp < Date.now() / 1000) throw new Refusal('replay', { message: 'iat/exp window' });
+    const nk = `rev:${p.client.id}:${b.nonce}`;
+    if (store.nonces.has(nk)) throw new Refusal('replay');
+    store.nonces.set(nk, b.exp);
+    return b;
+  }
+  function revokeOne(p, cid, body) {
+    const b = revokeBody(p, body);
+    const t = store.clients.get(cid);
+    if (!t || t.state === 'revoked') throw new Refusal('gone');
+    if (cid !== p.client.id && !bugs.revokeOthersFree) checkPresence(p.client, b, 'confirm');
+    revokeClient(cid);
+    audit(`client/${cid}`, { event: 'revoked', by: p.principal });
+    return clientView(store.clients.get(cid));
+  }
+  function revokeAll(p, body) {
+    const b = revokeBody(p, body);
+    checkPresence(p.client, b, 'local');
+    for (const c of store.clients.values()) if (c.state === 'active') revokeClient(c.id);
+    return { spec: SPEC, revoked: [...store.clients.values()].filter((c) => c.state === 'revoked').length };
+  }
+  const clientView = ({ ver, presence, ...c }) => ({ spec: SPEC, ...c, presence: presence.map(({ kid, suite }) => ({ kid, suite })) });
+
+  // ---- feeds ---------------------------------------------------------------------------
+  function setFeed(name, data) {
+    const f = store.feeds.get(name);
+    const rev = (f?.rev ?? 0) + 1;
+    store.feeds.set(name, { rev, data, updated: iso(now()) });
+    emit('hitch.changed@1', { resource: 'feeds', id: name, rev, op: f ? 'update' : 'create' }, { subject: `feed/${name}`, privacy: 'public' });
+    return rev;
+  }
+
   function viewFor(p, d) {
     const c = p.client;
     if (!c) return d;
@@ -287,7 +331,7 @@ export function createNode({ store = createStore(), clock = { now: () => Date.no
   // ---- HTTP ------------------------------------------------------------------------------
   const lists = { decisions: () => [...store.decisions.values()].map((r) => r.d), items: () => [...store.items.values()],
     sessions: () => [...store.sessions.values()], messages: () => [...store.messages.values()],
-    clients: () => [...store.clients.values()].map(({ ver, presence, ...c }) => ({ spec: SPEC, ...c, presence: presence.map(({ kid, suite }) => ({ kid, suite })) })) };
+    clients: () => [...store.clients.values()].map(clientView) };
 
   function send(res, status, obj, headers = {}) {
     if (onSend && res.req) obj = onSend(new URL(res.req.url, 'http://x').pathname, obj, status) ?? obj;
@@ -315,7 +359,7 @@ export function createNode({ store = createStore(), clock = { now: () => Date.no
       sweepExpiry();
       if (req.method === 'GET' && path === '/.well-known/hitch') {
         return send(res, 200, { specs: [SPEC], impl: { name: 'toy-node', version: '0.1.0' }, aid, caps: ['sse', 'longpoll'],
-          profiles: ['core', 'decisions', 'pairing'], suites: ['hmac-sha256', 'p256', 'ed25519'],
+          profiles: ['core', 'decisions', 'pairing', 'feeds'], suites: ['hmac-sha256', 'p256', 'ed25519'],
           nodeKey: { suite: 'ed25519', kid, x: nodeKey.pub } });
       }
       if (req.method === 'POST' && path === '/hitch/v1/clients/pairings') return send(res, 202, pairStart(body));
@@ -366,6 +410,19 @@ export function createNode({ store = createStore(), clock = { now: () => Date.no
         return send(res, 200, emit(b.type, b.data ?? {}, { subject: b.subject, to: b.to, from }));
       }
       if (req.method === 'GET' && path === '/hitch/v1/events') return events(req, res, url);
+      const rv = path.match(/^\/hitch\/v1\/clients\/(c_[A-Za-z0-9]+)\/revoke$/);
+      if (req.method === 'POST' && rv) return send(res, 200, revokeOne(p, rv[1], body));
+      if (req.method === 'POST' && path === '/hitch/v1/clients/revoke-all') return send(res, 200, revokeAll(p, body));
+      const fm = path.match(/^\/hitch\/v1\/feeds\/([a-z][a-z0-9-]*(?:\.[a-z][a-zA-Z0-9-]*)+@[1-9][0-9]*)$/);
+      if (req.method === 'GET' && fm) {
+        if (p.client && !p.client.scopes.includes('read')) throw new Refusal('scope');
+        const f = store.feeds.get(fm[1]);
+        if (!f) throw new Refusal('gone');
+        const PR = ['public', 'counts', 'meta', 'text', 'secret'];
+        const cls = catalogue.types[fm[1]]?.privacy ?? 'text';
+        if (p.client && PR.indexOf(cls) > PR.indexOf(p.client.privacy)) throw new Refusal('privacy');
+        return send(res, 200, sign({ spec: SPEC, feed: fm[1], rev: f.rev, updated: f.updated, privacy: cls, data: f.data }));
+      }
       const cm = path.match(/^\/hitch\/v1\/content\/(sha256:[0-9a-f]{64})$/);
       if (req.method === 'GET' && cm) {
         const c = store.content.get(cm[1]);
@@ -420,7 +477,7 @@ export function createNode({ store = createStore(), clock = { now: () => Date.no
     putContent: (bytes, type = 'text/plain; charset=utf-8', privacy = 'text') => {
       const b = Buffer.from(bytes); const h = 'sha256:' + createHash('sha256').update(b).digest('hex');
       store.content.set(h, { b, type, privacy }); return { hash: h, bytes: b.length };
-    }, answerAs: (p, id, body) => answer(p, id, body), withdraw: (id) => resolve(id, 'withdrawn'), addToken, addClient, revokeClient, issueGrant, trim,
+    }, answerAs: (p, id, body) => answer(p, id, body), withdraw: (id) => resolve(id, 'withdrawn'), addToken, addClient, revokeClient, issueGrant, trim, setFeed,
     resolveElsewhere: (id, where) => resolve(id, 'resolved-elsewhere', { answered: { verb: 'approve', by: 'app:herdr', at: iso(now()), where } }),
     executorCalls: (id) => store.executorCalls.get(id) ?? 0,
     publishAs: (principal, type, data) => emit(type, data, { from: { aid, principal } }),

@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hitch.dev/types/hitch.feed.schema.json",
+  "title": "GET /hitch/v1/feeds/:owner.:name@:major",
+  "description": "A named, versioned read model. Node-signed. data validates against types/<feed>.schema.json. A change emits hitch.changed@1 {resource:'feeds', id:<feed>, rev}. privacy is the feed's class from the catalogue; a client below it gets 403 privacy.",
+  "type": "object",
+  "required": ["spec", "feed", "rev", "updated", "privacy", "data"],
+  "properties": {
+    "spec": { "$ref": "hitch.defs.schema.json#/$defs/spec" },
+    "feed": { "$ref": "hitch.defs.schema.json#/$defs/typeName" },
+    "rev": { "type": "integer", "minimum": 1 },
+    "updated": { "$ref": "hitch.defs.schema.json#/$defs/time" },
+    "privacy": { "$ref": "hitch.defs.schema.json#/$defs/privacy" },
+    "data": { "type": "object" },
+    "sig": { "$ref": "hitch.defs.schema.json#/$defs/sig" }
+  }
+}

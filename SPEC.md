@@ -184,7 +184,8 @@ flowchart TD
 | Feeds | `GET /hitch/v1/feeds/:owner.:name@:major` (grant-checked) | `/v1/feeds` |
 | Stream | `GET /hitch/v1/events` as SSE (`id: seq`, beat every 25 s) **or** JSON long-poll `&wait=25` | `/api/view/stream`, `GET /wait` |
 | Gap | `410 {code:"gap", resync:[…]}`: re-list, then resume from the list's cursor | hc `missed` |
-| Commands | `POST …/answers`, `POST …/messages` (person-authored), `POST …/presence`, `POST …/publish` (owner types only) | |
+| Commands | `POST …/answers`, `POST …/messages` (person-authored), `POST …/presence`, `POST …/publish` (owner types only), `POST /hitch/v1/clients/:cid/revoke`, `POST /hitch/v1/clients/revoke-all` | |
+| Feed | `GET /hitch/v1/feeds/:feed` → [`hitch.feed`](types/hitch.feed.schema.json) `{spec, feed, rev, updated, privacy, data, sig}`, node-signed; `data` validates against `types/<feed>.schema.json`. A change emits `hitch.changed@1 {resource:"feeds", id:<feed>, rev}`. Unknown feed: `gone`; client privacy below the feed's class: `privacy`. First pinned feed: [`kernel.connectors@1`](types/kernel.connectors@1.schema.json) (connector status, read-only) |
 | Content | `GET /hitch/v1/content/:hash` (privacy-checked) | |
 
 - **Local:** `daemon.sock` (macOS and Linux). On Windows, the key-checked loopback TCP port from `api.json`. A loopback HTTP port keeps the Host and Origin guards. **A client proves the server with `/hitch/v1/sockhello` before sending credentials.** The server never assumes the caller is a person because of the transport.
@@ -234,7 +235,9 @@ flowchart TD
 
 **Third-party clients:** start as above. Vendor decision kinds **default to local** (unreachable remotely) until a local decision assigns a tier. That answers how Herdquarters and pairview get floors without a spec release. Client-created decisions are rate-limited and always shown under their owner.
 
-**Kill switch:** `hitch revoke --all`, local only with presence. Pairing attempts raise a `kernel.lan.access@1`-style tripwire decision.
+**Revoke.** Direct commands, not decisions: the person acts. Body [`hitch.revoke.request`](types/hitch.revoke.request.schema.json) `{iat, exp, nonce, presence?}` on a signed request; `presence` signs JCS(body minus `presence`). **Revoking your own client is free** (it only loses power). **Revoking another client needs a confirm-ceiling client and presence**, so an agent holding a decide-tier request key cannot sign Tyler's phone out (`tier`, `step_up_required`). An already revoked client gives `gone`. The response is the updated `hitch.client@1`, and a `hitch.changed@1` for clients follows.
+
+**Kill switch:** `hitch revoke --all` = `POST /hitch/v1/clients/revoke-all`, local tier with presence; it revokes every client, the caller too. Pairing attempts raise a `kernel.lan.access@1`-style tripwire decision.
 
 **Where each v2 hardening guarantee lives now**
 
@@ -267,7 +270,7 @@ flowchart TD
 
 **Closed refusal codes:** `not_a_client, tier, scope, step_up_required, stale, already, gone, withdrawn, expired, replay, revoked, gap, unknown_type, privacy, rate, suite, unauthenticated, invalid`. Each has a fixed HTTP status in [`codes.json`](codes.json).
 
-**The kit is built** (P0): [`types/`](types), [`codes.json`](codes.json), [`catalogue.json`](catalogue.json) and [`conformance/`](conformance/README.md): `hitch-check` (server, 37 checks over core, decisions and pairing), `hitch-client-check` with `hitch-mock` (client, 12 checks) and `hitch-catalog-check` (the `sdk:check` gate). The kit tests itself against an in-repo toy node and naive client, each with planted bugs that must turn their checks red. The Python stdlib variant for pairview is not built yet.
+**The kit is built** (P0): [`types/`](types), [`codes.json`](codes.json), [`catalogue.json`](catalogue.json) and [`conformance/`](conformance/README.md): `hitch-check` (server, 43 checks over core, decisions, pairing and feeds), `hitch-client-check` with `hitch-mock` (client, 12 checks) and `hitch-catalog-check` (the `sdk:check` gate). The kit tests itself against an in-repo toy node and naive client, each with planted bugs that must turn their checks red. The Python stdlib variant for pairview is not built yet.
 
 **Profiles:** `core` (required: discovery, hello, lists, events, pair), `decisions`, `feeds`, `messaging`, `tasks`, `push`, `relay`, `federation`. `/.well-known` may claim only the profiles that passed.
 
@@ -336,6 +339,8 @@ SAS = the first 64 bits of sha256(JCS({commit, clientNonce, serverNonce, pub, no
 |---|---|---|
 | `report.send@1` | To, Cc (optional), Subject, Week (ISO Monday), Body `{digest, ref, bytes}` | approve "Send" (confirm), sendBack needsText (decide), decline (narrow) |
 | `wins.confirm@1` | Win, Impact, Project, Detail (optional), Logged by | keep, edit needsText (the new title), discard (all decide) |
+| `kernel.job.approve@1` | Job, Schedule, Runs in, Tools, Model (optional), Prompt `{digest, ref, bytes}`: the client fetches the prompt and checks the digest before enabling Approve | approve (confirm), decline (narrow) |
+| `kernel.connector.signin@1` | Connector, Account, Scopes | approve (local), decline (narrow) |
 | `hitch.client.pair@1` | Device, **Code** (the node-side SAS: the approver compares it with the code on the new client), Signs with, Starts at, one Presence key row per key | approve (local), decline (narrow) |
 
 ## What Haystack keeps, what is retired, what becomes the reference client

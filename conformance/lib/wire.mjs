@@ -118,6 +118,14 @@ export function buildAnswer(decision, { aid, verb, text, presenceKey, presenceKi
 }
 export const presenceBytes = (answer) => jcs(without(answer, 'presence'));
 
+// A presence-bearing command body (revoke, revoke-all): {iat, exp, nonce, presence?}.
+export function commandBody({ presenceKey, presenceKid, iat, ttl = 120, nonce } = {}) {
+  iat ??= Math.floor(Date.now() / 1000);
+  const b = { iat, exp: iat + ttl, nonce: nonce ?? b64u(randomBytes(16)) };
+  if (presenceKey) b.presence = { suite: presenceKey.suite, kid: presenceKid, v: signBytes(presenceKey, jcs(b)) };
+  return b;
+}
+
 export const randomUlid = () => {
   const A = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
   let t = Date.now(), s = '';

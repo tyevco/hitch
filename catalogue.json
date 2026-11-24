@@ -2,60 +2,347 @@
   "spec": "hitch/1",
   "description": "Initial catalogue. floor is the minimum answer tier (a mod may raise it, never lower it). safety != none: no grants, no default, no fallback. privacy is the node-set class for the type's data. kinds marked decision:true are decision kinds. Vendor kinds not listed default to floor local until a local decision assigns one.",
   "types": {
-    "hitch.changed@1":            { "owner": "hitch", "privacy": "public" },
-    "hitch.gap@1":                { "owner": "hitch", "privacy": "public" },
-    "hitch.beat@1":               { "owner": "hitch", "privacy": "public" },
-    "hitch.attention.due@1":      { "owner": "hitch", "privacy": "counts" },
-    "hitch.presence@1":           { "owner": "hitch", "privacy": "meta" },
-    "hitch.decision@1":           { "owner": "hitch", "privacy": "meta" },
-    "hitch.answer@1":             { "owner": "hitch", "privacy": "meta" },
-    "hitch.client.pair@1":        { "owner": "hitch", "privacy": "meta", "decision": true, "floor": "local", "safety": "grant" },
-    "hitch.client.scope@1":       { "owner": "hitch", "privacy": "meta", "decision": true, "floor": "local", "safety": "grant" },
-    "hitch.grant.issue@1":        { "owner": "hitch", "privacy": "meta", "decision": true, "floor": "local", "safety": "grant" },
-    "hitch.question@1":           { "owner": "hitch", "privacy": "text", "decision": true, "floor": "decide", "safety": "none" },
-    "kernel.session.started@1":   { "owner": "kernel", "privacy": "meta" },
-    "kernel.session.status@1":    { "owner": "kernel", "privacy": "meta" },
-    "kernel.session.ended@1":     { "owner": "kernel", "privacy": "meta" },
-    "kernel.job.approve@1":       { "owner": "kernel", "privacy": "text", "decision": true, "floor": "confirm", "safety": "none" },
-    "kernel.mod.admit@1":         { "owner": "kernel", "privacy": "meta", "decision": true, "floor": "local", "safety": "grant" },
-    "kernel.settings.confirm@1":  { "owner": "kernel", "privacy": "meta", "decision": true, "floor": "local", "safety": "grant" },
-    "kernel.permissions.mode@1":  { "owner": "kernel", "privacy": "meta", "decision": true, "floor": "local", "safety": "grant" },
-    "kernel.connector.signin@1":  { "owner": "kernel", "privacy": "meta", "decision": true, "floor": "local", "safety": "signin" },
-    "kernel.lan.access@1":        { "owner": "kernel", "privacy": "meta", "decision": true, "floor": "local", "safety": "grant" },
-    "kernel.hub.release@1":       { "owner": "kernel", "privacy": "text", "decision": true, "floor": "confirm", "safety": "send" },
-    "kernel.agents.grant@1":      { "owner": "kernel", "privacy": "meta", "decision": true, "floor": "local", "safety": "grant" },
-    "watch.merge@1":              { "owner": "watch", "privacy": "meta", "decision": true, "floor": "confirm", "safety": "merge" },
-    "watch.deploy@1":             { "owner": "watch", "privacy": "meta", "decision": true, "floor": "confirm", "safety": "deploy" },
-    "watch.prready@1":            { "owner": "watch", "privacy": "meta", "decision": true, "floor": "confirm", "safety": "none" },
-    "outbox.send@1":              { "owner": "outbox", "privacy": "text", "decision": true, "floor": "confirm", "safety": "send" },
-    "parley.send@1":              { "owner": "parley", "privacy": "text", "decision": true, "floor": "decide", "safety": "none", "reachesOut": "confirm" },
-    "parley.room.post@1":         { "owner": "parley", "privacy": "text", "decision": true, "floor": "decide", "safety": "none", "reachesOut": "confirm" },
-    "director.hire@1":            { "owner": "director", "privacy": "meta", "decision": true, "floor": "confirm", "safety": "none" },
-    "playbook.entry@1":           { "owner": "playbook", "privacy": "text", "decision": true, "floor": "decide", "safety": "none" },
-    "forms.submit@1":             { "owner": "forms", "privacy": "text", "decision": true, "floor": "decide", "safety": "none" },
-    "report.send@1":              { "owner": "report", "privacy": "text", "decision": true, "floor": "confirm", "safety": "send" },
-    "queue.question@1":           { "owner": "queue", "privacy": "text", "decision": true, "floor": "confirm", "safety": "none", "narrowVerbs": ["deny"] },
-    "queue.permission@1":         { "owner": "queue", "privacy": "text", "decision": true, "floor": "confirm", "safety": "none", "narrowVerbs": ["deny"] },
-    "queue.plan@1":               { "owner": "queue", "privacy": "text", "decision": true, "floor": "confirm", "safety": "none", "narrowVerbs": ["deny"] },
-    "wins.confirm@1":             { "owner": "wins", "privacy": "text", "decision": true, "floor": "decide", "safety": "none" },
-    "wins.stage@1":               { "owner": "wins", "privacy": "text", "decision": true, "floor": "decide", "safety": "none" },
-    "wins.weekly@1":              { "owner": "wins", "privacy": "text", "feed": true },
-    "wins.report@1":              { "owner": "wins", "privacy": "text", "feed": true },
-    "message.received@1":         { "owner": "message", "privacy": "text" },
-    "message.answered@1":         { "owner": "message", "privacy": "text" },
-    "message.delivery@1":         { "owner": "message", "privacy": "meta" },
-    "herdr-teams.hire@1":         { "owner": "herdr-teams", "privacy": "meta", "decision": true, "floor": "vendor", "safety": "none" },
-    "herdr-teams.layoff@1":       { "owner": "herdr-teams", "privacy": "meta", "decision": true, "floor": "vendor", "safety": "none" },
-    "herdr-teams.leave@1":        { "owner": "herdr-teams", "privacy": "meta", "decision": true, "floor": "vendor", "safety": "none" },
-    "herdr-teams.return@1":       { "owner": "herdr-teams", "privacy": "meta", "decision": true, "floor": "vendor", "safety": "none" },
-    "herdr-teams.station@1":      { "owner": "herdr-teams", "privacy": "meta", "decision": true, "floor": "vendor", "safety": "none" },
-    "herdr-teams.run@1":          { "owner": "herdr-teams", "privacy": "meta", "decision": true, "floor": "vendor", "safety": "none" },
-    "herdr-teams.escalation@1":   { "owner": "herdr-teams", "privacy": "meta", "decision": true, "floor": "vendor", "safety": "none" },
-    "pairview.spawn@1":           { "owner": "pairview", "privacy": "meta", "decision": true, "floor": "vendor", "safety": "none", "optional": true },
-    "pairview.rule@1":            { "owner": "pairview", "privacy": "meta", "decision": true, "floor": "vendor", "safety": "none", "optional": true }
+    "hitch.changed@1": {
+      "owner": "hitch",
+      "privacy": "public"
+    },
+    "hitch.gap@1": {
+      "owner": "hitch",
+      "privacy": "public"
+    },
+    "hitch.beat@1": {
+      "owner": "hitch",
+      "privacy": "public"
+    },
+    "hitch.attention.due@1": {
+      "owner": "hitch",
+      "privacy": "counts"
+    },
+    "hitch.presence@1": {
+      "owner": "hitch",
+      "privacy": "meta"
+    },
+    "hitch.decision@1": {
+      "owner": "hitch",
+      "privacy": "meta"
+    },
+    "hitch.answer@1": {
+      "owner": "hitch",
+      "privacy": "meta"
+    },
+    "hitch.client.pair@1": {
+      "owner": "hitch",
+      "privacy": "meta",
+      "decision": true,
+      "floor": "local",
+      "safety": "grant"
+    },
+    "hitch.client.scope@1": {
+      "owner": "hitch",
+      "privacy": "meta",
+      "decision": true,
+      "floor": "local",
+      "safety": "grant"
+    },
+    "hitch.grant.issue@1": {
+      "owner": "hitch",
+      "privacy": "meta",
+      "decision": true,
+      "floor": "local",
+      "safety": "grant"
+    },
+    "hitch.question@1": {
+      "owner": "hitch",
+      "privacy": "text",
+      "decision": true,
+      "floor": "decide",
+      "safety": "none"
+    },
+    "kernel.session.started@1": {
+      "owner": "kernel",
+      "privacy": "meta"
+    },
+    "kernel.session.status@1": {
+      "owner": "kernel",
+      "privacy": "meta"
+    },
+    "kernel.session.ended@1": {
+      "owner": "kernel",
+      "privacy": "meta"
+    },
+    "kernel.job.approve@1": {
+      "owner": "kernel",
+      "privacy": "text",
+      "decision": true,
+      "floor": "confirm",
+      "safety": "none"
+    },
+    "kernel.mod.admit@1": {
+      "owner": "kernel",
+      "privacy": "meta",
+      "decision": true,
+      "floor": "local",
+      "safety": "grant"
+    },
+    "kernel.settings.confirm@1": {
+      "owner": "kernel",
+      "privacy": "meta",
+      "decision": true,
+      "floor": "local",
+      "safety": "grant"
+    },
+    "kernel.permissions.mode@1": {
+      "owner": "kernel",
+      "privacy": "meta",
+      "decision": true,
+      "floor": "local",
+      "safety": "grant"
+    },
+    "kernel.connector.signin@1": {
+      "owner": "kernel",
+      "privacy": "meta",
+      "decision": true,
+      "floor": "local",
+      "safety": "signin"
+    },
+    "kernel.lan.access@1": {
+      "owner": "kernel",
+      "privacy": "meta",
+      "decision": true,
+      "floor": "local",
+      "safety": "grant"
+    },
+    "kernel.hub.release@1": {
+      "owner": "kernel",
+      "privacy": "text",
+      "decision": true,
+      "floor": "confirm",
+      "safety": "send"
+    },
+    "kernel.agents.grant@1": {
+      "owner": "kernel",
+      "privacy": "meta",
+      "decision": true,
+      "floor": "local",
+      "safety": "grant"
+    },
+    "watch.merge@1": {
+      "owner": "watch",
+      "privacy": "meta",
+      "decision": true,
+      "floor": "confirm",
+      "safety": "merge"
+    },
+    "watch.deploy@1": {
+      "owner": "watch",
+      "privacy": "meta",
+      "decision": true,
+      "floor": "confirm",
+      "safety": "deploy"
+    },
+    "watch.prready@1": {
+      "owner": "watch",
+      "privacy": "meta",
+      "decision": true,
+      "floor": "confirm",
+      "safety": "none"
+    },
+    "outbox.send@1": {
+      "owner": "outbox",
+      "privacy": "text",
+      "decision": true,
+      "floor": "confirm",
+      "safety": "send"
+    },
+    "parley.send@1": {
+      "owner": "parley",
+      "privacy": "text",
+      "decision": true,
+      "floor": "decide",
+      "safety": "none",
+      "reachesOut": "confirm"
+    },
+    "parley.room.post@1": {
+      "owner": "parley",
+      "privacy": "text",
+      "decision": true,
+      "floor": "decide",
+      "safety": "none",
+      "reachesOut": "confirm"
+    },
+    "director.hire@1": {
+      "owner": "director",
+      "privacy": "meta",
+      "decision": true,
+      "floor": "confirm",
+      "safety": "none"
+    },
+    "playbook.entry@1": {
+      "owner": "playbook",
+      "privacy": "text",
+      "decision": true,
+      "floor": "decide",
+      "safety": "none"
+    },
+    "forms.submit@1": {
+      "owner": "forms",
+      "privacy": "text",
+      "decision": true,
+      "floor": "decide",
+      "safety": "none"
+    },
+    "report.send@1": {
+      "owner": "report",
+      "privacy": "text",
+      "decision": true,
+      "floor": "confirm",
+      "safety": "send"
+    },
+    "queue.question@1": {
+      "owner": "queue",
+      "privacy": "text",
+      "decision": true,
+      "floor": "confirm",
+      "safety": "none",
+      "narrowVerbs": [
+        "deny"
+      ]
+    },
+    "queue.permission@1": {
+      "owner": "queue",
+      "privacy": "text",
+      "decision": true,
+      "floor": "confirm",
+      "safety": "none",
+      "narrowVerbs": [
+        "deny"
+      ]
+    },
+    "queue.plan@1": {
+      "owner": "queue",
+      "privacy": "text",
+      "decision": true,
+      "floor": "confirm",
+      "safety": "none",
+      "narrowVerbs": [
+        "deny"
+      ]
+    },
+    "wins.confirm@1": {
+      "owner": "wins",
+      "privacy": "text",
+      "decision": true,
+      "floor": "decide",
+      "safety": "none"
+    },
+    "wins.stage@1": {
+      "owner": "wins",
+      "privacy": "text",
+      "decision": true,
+      "floor": "decide",
+      "safety": "none"
+    },
+    "wins.weekly@1": {
+      "owner": "wins",
+      "privacy": "text",
+      "feed": true
+    },
+    "wins.report@1": {
+      "owner": "wins",
+      "privacy": "text",
+      "feed": true
+    },
+    "message.received@1": {
+      "owner": "message",
+      "privacy": "text"
+    },
+    "message.answered@1": {
+      "owner": "message",
+      "privacy": "text"
+    },
+    "message.delivery@1": {
+      "owner": "message",
+      "privacy": "meta"
+    },
+    "herdr-teams.hire@1": {
+      "owner": "herdr-teams",
+      "privacy": "meta",
+      "decision": true,
+      "floor": "vendor",
+      "safety": "none"
+    },
+    "herdr-teams.layoff@1": {
+      "owner": "herdr-teams",
+      "privacy": "meta",
+      "decision": true,
+      "floor": "vendor",
+      "safety": "none"
+    },
+    "herdr-teams.leave@1": {
+      "owner": "herdr-teams",
+      "privacy": "meta",
+      "decision": true,
+      "floor": "vendor",
+      "safety": "none"
+    },
+    "herdr-teams.return@1": {
+      "owner": "herdr-teams",
+      "privacy": "meta",
+      "decision": true,
+      "floor": "vendor",
+      "safety": "none"
+    },
+    "herdr-teams.station@1": {
+      "owner": "herdr-teams",
+      "privacy": "meta",
+      "decision": true,
+      "floor": "vendor",
+      "safety": "none"
+    },
+    "herdr-teams.run@1": {
+      "owner": "herdr-teams",
+      "privacy": "meta",
+      "decision": true,
+      "floor": "vendor",
+      "safety": "none"
+    },
+    "herdr-teams.escalation@1": {
+      "owner": "herdr-teams",
+      "privacy": "meta",
+      "decision": true,
+      "floor": "vendor",
+      "safety": "none"
+    },
+    "pairview.spawn@1": {
+      "owner": "pairview",
+      "privacy": "meta",
+      "decision": true,
+      "floor": "vendor",
+      "safety": "none",
+      "optional": true
+    },
+    "pairview.rule@1": {
+      "owner": "pairview",
+      "privacy": "meta",
+      "decision": true,
+      "floor": "vendor",
+      "safety": "none",
+      "optional": true
+    },
+    "kernel.connectors@1": {
+      "owner": "kernel",
+      "privacy": "meta",
+      "feed": true
+    }
   },
   "patterns": {
-    "work.*@1": { "owner": "work", "privacy": "meta" },
-    "todo.*@1": { "owner": "todo", "privacy": "meta" }
+    "work.*@1": {
+      "owner": "work",
+      "privacy": "meta"
+    },
+    "todo.*@1": {
+      "owner": "todo",
+      "privacy": "meta"
+    }
   }
 }

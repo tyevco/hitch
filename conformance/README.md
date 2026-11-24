@@ -40,6 +40,8 @@ export default {
   async revokeClient(cid) {},
   async issueGrant({ kinds }) { return { token }; },  // throw .code 'invalid' for a safety kind
   async publishType() { return { type: 'wins.weekly@1', data: {} }; },  // a type the `mod` principal owns
+  async mintClient({ ceiling, privacy, presence }) { return { cid, key, presence?: { kid, key } }; },  // a fresh paired client
+  async setFeed(name, data) {},          // publish a feed revision (kernel.connectors@1, wins.weekly@1)
 };
 ```
 
@@ -51,9 +53,10 @@ The toy node's adapter, [`example/toy-adapter.mjs`](example/toy-adapter.mjs), is
 |---|---|
 | core | discovery, sockhello, hello, unauthenticated, request-replay, lists, envelopes, sse-equals-longpoll, resume, longpoll-waits, gap, from-stamped, publish-owner-only |
 | decisions | decision-signed, not-a-client, decide-answer, tier, narrow-decline, step-up, local-step-up, suite, stale, one-winner, answer-replay, answer-window, verb-offered, revoked, waits-forever, expiry-never-approves, no-safety-default, grant-safety |
-| pairing | pairing-sas, pairing-impostor, pairing-commit, agent-bootstrap, pairing-approve, pairing-presence |
+| pairing | pairing-sas, pairing-impostor, pairing-commit, agent-bootstrap, pairing-approve, pairing-presence, revoke-self, revoke-other, revoke-all (always runs last: it revokes the adapter's clients) |
+| feeds | feed-read, feed-changed, feed-guards |
 
-Not yet covered: feeds, messaging, tasks, push, relay, federation, privacy classes on events, the attention ladder, and the OS-dialog bootstrap (it needs a human). The Python stdlib variant for pairview is not built.
+Not yet covered: messaging, tasks, push, relay, federation, privacy classes on events, the attention ladder, and the OS-dialog bootstrap (it needs a human). The Python stdlib variant for pairview is not built.
 
 ## Client suite: writing an adapter
 

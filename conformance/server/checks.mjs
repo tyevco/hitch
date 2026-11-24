@@ -411,6 +411,73 @@ export const CHECKS = [
       const r2 = await connect(ctx.url, ctx.aid, me).answer(sid, 'approve');
       assert.equal(r2.status, 200, `the raised client answers confirm with its paired presence key: ${JSON.stringify(r2.body)}`);
     } },
+
+  // ---- revoke (pairing profile: the client lifecycle) ------------------------------------
+  { id: 'revoke-self', profile: 'pairing', title: 'a client may revoke itself with no presence; it is then refused as revoked', needs: ['mintClient'],
+    async run(ctx) {
+      const c = await ctx.adapter.mintClient({ ceiling: 'decide' });
+      const api = connect(ctx.url, ctx.aid, c);
+      const r = await revoke(api, c.cid, c, { presence: false });
+      assert.equal(r.status, 200, JSON.stringify(r.body)); ok('hitch.client@1', r.body);
+      assert.equal(r.body.state, 'revoked');
+      refused(await api.hello(), 'revoked');
+    } },
+  { id: 'revoke-other', profile: 'pairing', title: 'revoking another client needs confirm + presence: decide gets tier, no presence gets step_up_required', needs: ['mintClient'],
+    async run(ctx) {
+      const a = await ctx.adapter.mintClient({ ceiling: 'decide' });
+      const b = await ctx.adapter.mintClient({ ceiling: 'decide' });
+      refused(await revoke(connect(ctx.url, ctx.aid, a), b.cid, a, { presence: false }), 'tier', 'a decide client (an agent with a request key):');
+      refused(await revoke(ctx.as('mod'), b.cid, {}), 'not_a_client', 'mod:');
+      refused(await revoke(ctx.as('clientConfirm'), b.cid, ctx.P.clientConfirm, { presence: false }), 'step_up_required');
+      const r = await revoke(ctx.as('clientConfirm'), b.cid, ctx.P.clientConfirm);
+      assert.equal(r.status, 200, JSON.stringify(r.body));
+      refused(await connect(ctx.url, ctx.aid, b).hello(), 'revoked');
+      refused(await revoke(ctx.as('clientConfirm'), b.cid, ctx.P.clientConfirm), 'gone', 'already revoked:');
+      const replay = (await import('../lib/wire.mjs')).commandBody({ presenceKey: ctx.P.clientConfirm.presence.key, presenceKid: ctx.P.clientConfirm.presence.kid, ttl: 600 });
+      const c = await ctx.adapter.mintClient({ ceiling: 'decide' });
+      refused(await ctx.as('clientConfirm').post(`/hitch/v1/clients/${c.cid}/revoke`, replay), 'replay', 'exp - iat > 120:');
+    } },
+  { id: 'revoke-all', profile: 'pairing', last: true, title: 'revoke-all needs local + presence and revokes every client, the caller too', needs: ['mintClient'],
+    async run(ctx) {
+      if (!ctx.P.clientLocal) throw new Skip('adapter has no clientLocal');
+      refused(await revoke(ctx.as('clientConfirm'), null, ctx.P.clientConfirm), 'tier', 'confirm client:');
+      refused(await revoke(ctx.as('clientLocal'), null, ctx.P.clientLocal, { presence: false }), 'step_up_required');
+      const r = await revoke(ctx.as('clientLocal'), null, ctx.P.clientLocal);
+      assert.equal(r.status, 200, JSON.stringify(r.body));
+      refused(await ctx.as('clientDecide').hello(), 'revoked');
+      refused(await ctx.as('clientLocal').hello(), 'revoked');
+    } },
+
+  // ---- feeds ---------------------------------------------------------------------------------
+  { id: 'feed-read', profile: 'feeds', title: 'a feed is a signed, schema-valid read model whose data matches its type', needs: ['setFeed'],
+    async run(ctx) {
+      await ctx.adapter.setFeed('kernel.connectors@1', { connectors: [{ id: 'm365', name: 'Microsoft 365', state: 'signed-in', account: 'me' }] });
+      const r = await ctx.as('clientDecide').get('/hitch/v1/feeds/kernel.connectors@1');
+      assert.equal(r.status, 200, JSON.stringify(r.body)); ok('hitch.feed', r.body);
+      assert.ok(ctx.verify(r.body), 'feed signature');
+      ok('kernel.connectors@1', r.body.data);
+      assert.equal(r.body.feed, 'kernel.connectors@1');
+    } },
+  { id: 'feed-changed', profile: 'feeds', title: 'a feed change emits hitch.changed@1 {resource:"feeds", id, rev}, and GET shows that rev', needs: ['setFeed'],
+    async run(ctx) {
+      const c = ctx.as('clientDecide');
+      await ctx.adapter.setFeed('kernel.connectors@1', { connectors: [] });
+      const before = (await c.get('/hitch/v1/feeds/kernel.connectors@1')).body.rev;
+      const start = (await c.list('decisions')).body.cursor;
+      await ctx.adapter.setFeed('kernel.connectors@1', { connectors: [{ id: 'gh', name: 'GitHub', state: 'expired' }] });
+      const ev = (await c.poll(start)).body.events.find((e) => e.type === 'hitch.changed@1' && e.data.resource === 'feeds' && e.data.id === 'kernel.connectors@1');
+      assert.ok(ev, 'change notice for the feed');
+      assert.equal(ev.data.rev, before + 1);
+      assert.equal((await c.get('/hitch/v1/feeds/kernel.connectors@1')).body.rev, before + 1);
+    } },
+  { id: 'feed-guards', profile: 'feeds', title: 'an unknown feed gives gone; a client below the feed privacy class gives privacy', needs: ['setFeed', 'mintClient'],
+    async run(ctx) {
+      refused(await ctx.as('clientDecide').get('/hitch/v1/feeds/acme.nothing@1'), 'gone');
+      await ctx.adapter.setFeed('wins.weekly@1', { week: '2026-11-16', wins: [] });
+      const low = await ctx.adapter.mintClient({ ceiling: 'decide', privacy: 'meta' });
+      refused(await connect(ctx.url, ctx.aid, low).get('/hitch/v1/feeds/wins.weekly@1'), 'privacy', 'meta client, text feed:');
+      refused(await connect(ctx.url, ctx.aid, null).get('/hitch/v1/feeds/kernel.connectors@1'), 'unauthenticated');
+    } },
 ];
 
 // A relaying impostor: forwards every request to the real node, rewriting JSON responses.
@@ -428,6 +495,12 @@ async function relay(target, rewrite) {
   await new Promise((ok2) => server.listen(0, '127.0.0.1', ok2));
   return { url: `http://127.0.0.1:${server.address().port}`, close: () => new Promise((ok2) => { server.closeAllConnections(); server.close(ok2); }) };
 }
+
+const revoke = async (api, cid, cred, { presence = true } = {}) => {
+  const { commandBody } = await import('../lib/wire.mjs');
+  const p = presence ? cred.presence : undefined;
+  return api.post(cid ? `/hitch/v1/clients/${cid}/revoke` : '/hitch/v1/clients/revoke-all', commandBody({ presenceKey: p?.key, presenceKid: p?.kid }));
+};
 
 async function waitPaired(ctx, pairing) {
   let st;
@@ -473,7 +546,7 @@ export async function runChecks(adapter, { only, log = console.log } = {}) {
   ctx.restart = async () => { env = (await adapter.restart()) ?? env; await bind(); };
   await bind();
   const results = [];
-  for (const c of CHECKS) {
+  for (const c of [...CHECKS.filter((x) => !x.last), ...CHECKS.filter((x) => x.last)]) {
     if (only && !only.includes(c.id) && !only.includes(c.profile)) continue;
     const missing = (c.needs ?? []).filter((n) => typeof adapter[n] !== 'function');
     if (missing.length) { results.push({ ...c, status: 'skip', why: `adapter lacks ${missing.join(', ')}` }); log(`- ${c.id}: skipped (adapter lacks ${missing.join(', ')})`); continue; }

@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hitch.dev/types/hitch.revoke.request.schema.json",
+  "title": "POST /hitch/v1/clients/:cid/revoke and /hitch/v1/clients/revoke-all",
+  "description": "A signed request from a paired client. Revoking yourself: no presence. Another client: confirm ceiling + presence. revoke-all: local + presence (it revokes the caller too). presence signs JCS(body minus presence).",
+  "type": "object",
+  "required": ["iat", "exp", "nonce"],
+  "properties": {
+    "iat": { "$ref": "hitch.defs.schema.json#/$defs/unix" },
+    "exp": { "$ref": "hitch.defs.schema.json#/$defs/unix" },
+    "nonce": { "type": "string", "minLength": 16, "maxLength": 64, "pattern": "^[A-Za-z0-9_-]+$" },
+    "presence": { "$ref": "hitch.defs.schema.json#/$defs/presence" }
+  },
+  "additionalProperties": false
+}
