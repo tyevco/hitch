@@ -1,6 +1,6 @@
 {
   "spec": "hitch/1",
-  "description": "Initial catalogue. floor is the minimum answer tier (a mod may raise it, never lower it). safety != none: no grants, no default, no fallback. privacy is the node-set class for the type's data. kinds marked decision:true are decision kinds. verbFloors lowers the floor for named verbs that run no side effect (default {decline: narrow}); it never names the verb that executes. Vendor kinds not listed default to floor local until a local decision assigns one. reachesOut: when a decision of that kind reaches another machine (request flag reachesOut), floor and safety are raised to these values (Tyler, 2026-11-24: a parley send that leaves the machine is always a safety send). vendorPending: the owner (not this project) writes the schema; catalog-check reports it as a warning that does not fail the gate unless --strict.",
+  "description": "Initial catalogue. floor is the minimum answer tier (a mod may raise it, never lower it). safety != none: no grants, no default, no fallback. privacy is the node-set class for the type's data. kinds marked decision:true are decision kinds. verbFloors lowers the floor for named verbs that run no side effect (default {decline: narrow}); it never names the verb that executes. Vendor kinds not listed default to floor local until a local decision assigns one. reachesOut: when a decision of that kind reaches another machine (request flag reachesOut), floor and safety are raised to these values (Tyler, 2026-11-24: a parley send that leaves the machine is always a safety send). vendorPending: the owner (not this project) writes the schema; catalog-check reports it as a warning that does not fail the gate unless --strict. declaredOnly: declared but not emitted yet (reason given); the whole-catalogue audit warns, and emitting it without a schema fails the --emitted gate as usual.",
   "types": {
     "hitch.changed@1": {
       "owner": "hitch",
@@ -96,7 +96,8 @@
       "privacy": "meta",
       "decision": true,
       "floor": "local",
-      "safety": "grant"
+      "safety": "grant",
+      "declaredOnly": "P5-P7: today a Dashboard button (K10)"
     },
     "kernel.connector.signin@1": {
       "owner": "kernel",
@@ -145,7 +146,8 @@
       "privacy": "meta",
       "decision": true,
       "floor": "confirm",
-      "safety": "none"
+      "safety": "none",
+      "declaredOnly": "P5-P7: today a Dashboard button (K3)"
     },
     "outbox.send@1": {
       "owner": "outbox",
@@ -242,16 +244,10 @@
       "safety": "none",
       "verbFloors": {
         "deny": "narrow"
-      }
+      },
+      "declaredOnly": "the queue mod mirrors no plan wait yet"
     },
     "wins.confirm@1": {
-      "owner": "wins",
-      "privacy": "text",
-      "decision": true,
-      "floor": "decide",
-      "safety": "none"
-    },
-    "wins.stage@1": {
       "owner": "wins",
       "privacy": "text",
       "decision": true,

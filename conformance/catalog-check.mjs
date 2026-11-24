@@ -40,18 +40,28 @@ export function check({ types = [], decisionKinds = [], schemaDirs = [], tiers =
   for (const f of findings) if (catalogue.types[f.type]?.vendorPending && f.problem === 'no schema') f.warning = 'vendor-pending';
   return findings;
 }
+
+// The whole catalogue, as if everything were emitted: what the pack still
+// owes. declaredOnly kinds warn here; they are only checked for real once a
+// node emits them (--emitted).
+export function audit() {
+  const ks = Object.entries(catalogue.types);
+  const f = check({ types: ks.filter(([, c]) => !c.decision).map(([k]) => k), decisionKinds: ks.filter(([, c]) => c.decision).map(([k]) => k) });
+  for (const x of f) if (catalogue.types[x.type]?.declaredOnly && x.problem === 'no schema') x.warning = `declared, not emitted (${catalogue.types[x.type].declaredOnly})`;
+  return f;
+}
 export const failing = (findings, { strict = false } = {}) => findings.filter((f) => strict || !f.warning);
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const i = process.argv.indexOf('--emitted');
-  if (i < 0 || !process.argv[i + 1]) { console.error('usage: hitch-catalog-check --emitted emitted.json [--strict]'); process.exit(2); }
-  const file = resolve(process.argv[i + 1]);
+  const all = process.argv.includes('--audit');
+  if (!all && (i < 0 || !process.argv[i + 1])) { console.error('usage: hitch-catalog-check --emitted emitted.json [--strict] | --audit [--strict]'); process.exit(2); }
   const strict = process.argv.includes('--strict');
-  const f = check(JSON.parse(readFileSync(file, 'utf8')), resolve(file, '..'));
+  const f = all ? audit() : check(JSON.parse(readFileSync(resolve(process.argv[i + 1]), 'utf8')), resolve(process.argv[i + 1], '..'));
   const bad = failing(f, { strict });
   for (const x of f) console.log(`${bad.includes(x) ? '✗' : '!'} ${x.type}: ${x.problem}${x.warning ? ` (${x.warning})` : ''}`);
   const warn = f.length - bad.length;
-  console.log(bad.length ? `${bad.length} finding(s)` : '✓ every emitted type has a schema and every decision kind a tier');
-  if (warn) console.log(`${warn} vendor-pending (not failing; --strict to fail on them)`);
+  console.log(bad.length ? `${bad.length} finding(s)` : all ? '✓ every first-party catalogue kind has a schema or is declared, not emitted' : '✓ every emitted type has a schema and every decision kind a tier');
+  if (warn) console.log(`${warn} warning(s): vendor-pending or declared-not-emitted (not failing; --strict to fail on them)`);
   process.exit(bad.length ? 1 : 0);
 }

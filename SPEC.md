@@ -126,7 +126,7 @@ flowchart TD
 | `playbook.entry@1` | playbook | keep / keepRepo / edit / discard, bound to the content hash | decide |
 | `forms.submit@1` / `report.send@1` | forms / report | a form to a teammate leaves the machine: `reachesOut`, as for parley | decide (reachesOut: confirm, safety send) / confirm |
 | `queue.question@1` / `queue.permission@1` / `queue.plan@1` | queue | choices; permit-once or deny only | confirm (deny is narrow) |
-| `wins.confirm@1` / `wins.stage@1`; feeds `wins.weekly@1`, `wins.report@1` | wins | | decide |
+| `wins.confirm@1`; feeds `wins.weekly@1`, `wins.report@1` | wins | `wins.stage` dropped: v2 moved staging into report (`REPORT_MOVED`) | decide |
 | `message.received/answered/delivery@1`, `work.*@1`, `todo.*@1` | generic | from contract.mjs GENERIC_TOPICS; `delivery.state` is queued\|sent\|seen\|acked\|held\|failed\|expired\|disputed | — |
 | `herdr-teams.hire/layoff/leave/return/station/run/escalation@1` | herdr-teams | preview rows plus rule-42 hashes as the bind | vendor-declared, see Auth |
 | `pairview.spawn@1`, `pairview.rule@1` | pairview | optional | vendor-declared |
@@ -272,7 +272,7 @@ flowchart TD
 
 **Closed refusal codes:** `not_a_client, tier, scope, step_up_required, stale, already, gone, withdrawn, expired, replay, revoked, gap, unknown_type, privacy, rate, suite, unauthenticated, invalid`. Each has a fixed HTTP status in [`codes.json`](codes.json).
 
-**The kit is built** (P0): [`types/`](types), [`codes.json`](codes.json), [`catalogue.json`](catalogue.json) and [`conformance/`](conformance/README.md): `hitch-check` (server, 54 checks over core, decisions, pairing, feeds and messaging), `hitch-client-check` with `hitch-mock` (client, 12 checks) and `hitch-catalog-check` (the `sdk:check` gate; vendor kinds marked `vendorPending` in the catalogue warn without failing it, and `--strict` fails on them too). The kit tests itself against an in-repo toy node and naive client, each with planted bugs that must turn their checks red. A Python stdlib client kit for pairview (`conformance/python/`) runs the same client checks over the hmac suite.
+**The kit is built** (P0): [`types/`](types), [`codes.json`](codes.json), [`catalogue.json`](catalogue.json) and [`conformance/`](conformance/README.md): `hitch-check` (server, 54 checks over core, decisions, pairing, feeds and messaging), `hitch-client-check` with `hitch-mock` (client, 12 checks) and `hitch-catalog-check` (the `sdk:check` gate; vendor kinds marked `vendorPending` in the catalogue warn without failing it, and `--strict` fails on them too; `--audit` checks the whole catalogue, where `declaredOnly` kinds (declared, not emitted yet) warn). The kit tests itself against an in-repo toy node and naive client, each with planted bugs that must turn their checks red. A Python stdlib client kit for pairview (`conformance/python/`) runs the same client checks over the hmac suite.
 
 **Profiles:** `core` (required: discovery, hello, lists, events, pair), `decisions`, `feeds`, `messaging`, `tasks`, `push`, `relay`, `federation`. `/.well-known` may claim only the profiles that passed.
 

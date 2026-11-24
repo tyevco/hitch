@@ -6,7 +6,7 @@ Node 22+, no dependencies. Everything here tests itself: `npm test` runs the kit
 |---|---|---|
 | `hitch-check` | a **node** (haystack-api), black-box over HTTP plus an adapter | `node conformance/server/hitch-check.mjs --adapter ./adapter.mjs` |
 | `hitch-client-check` | a **client** (hitch-ref, Herdquarters) against `hitch-mock` | `node conformance/client/hitch-client-check.mjs --client ./adapter.mjs` |
-| `hitch-catalog-check` | the `sdk:check` gate: every emitted type has a schema, every decision kind a tier at or above its floor | `node conformance/catalog-check.mjs --emitted emitted.json [--strict]`. herdr-teams and pairview kinds are `vendorPending`: their owners write the schemas, so they warn and don't fail the gate unless `--strict` |
+| `hitch-catalog-check` | the `sdk:check` gate: every emitted type has a schema, every decision kind a tier at or above its floor | `node conformance/catalog-check.mjs --emitted emitted.json [--strict]`. herdr-teams and pairview kinds are `vendorPending`: their owners write the schemas, so they warn and don't fail the gate unless `--strict`. `--audit` checks the whole catalogue; `declaredOnly` kinds (declared, not emitted yet) warn there, and fail as soon as a node emits one with no schema |
 
 Load: each run starts one small in-process server and finishes in about a second. Run one check with `--only <id>` or one profile with `--only decisions`.
 

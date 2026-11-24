@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { makeValidator, loadPack } from '../conformance/lib/schema.mjs';
-import { check, catalogue, failing } from '../conformance/catalog-check.mjs';
+import { check, catalogue, failing, audit } from '../conformance/catalog-check.mjs';
 
 const V = makeValidator();
 const codes = JSON.parse(readFileSync(new URL('../codes.json', import.meta.url)));
@@ -77,6 +77,13 @@ test('vendor-pending kinds warn without failing the gate, unless strict', () => 
   assert.deepEqual(failing(f), []);
   assert.equal(failing(f, { strict: true }).length, 2);
   for (const [t, c] of Object.entries(catalogue.types)) if (c.vendorPending) assert.match(t, /^(herdr-teams|pairview)\./, `${t}: only vendor-owned kinds may be vendorPending`);
+});
+
+test('the whole-catalogue audit has no failing gaps: every first-party kind has a schema or is declared-only', () => {
+  const f = audit();
+  assert.deepEqual(failing(f).map((x) => `${x.type}: ${x.problem}`), []);
+  assert.ok(f.some((x) => x.warning?.startsWith('declared, not emitted')), 'declared-only kinds still show');
+  assert.equal(failing(check({ decisionKinds: ['queue.plan@1'] })).length, 1, 'emitting a declared-only kind without a schema fails the gate');
 });
 
 test('catalog-check (sdk:check) flags missing schemas, missing tiers and tiers below floor', () => {
