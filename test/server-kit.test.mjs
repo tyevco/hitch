@@ -11,7 +11,7 @@ test('clean toy node passes every check and may claim core, decisions, pairing',
   const r = await runChecks(toyAdapter(), quiet);
   const bad = r.results.filter((x) => x.status !== 'pass').map((x) => `${x.id}: ${x.status} ${x.error?.message ?? x.why ?? ''}`);
   assert.deepEqual(bad, []);
-  assert.deepEqual(r.claimable.sort(), ['core', 'decisions', 'feeds', 'messaging', 'pairing']);
+  assert.deepEqual(r.claimable.sort(), ['core', 'decisions', 'feeds', 'messaging', 'pairing', 'tasks']);
   assert.deepEqual(r.overclaimed, []);
 });
 
@@ -30,6 +30,7 @@ const PLANTED = {
   grantByKind: ['reaches-out-is-a-send'],
   trustReachFlag: ['reaches-out-is-a-send'],
   keepAllowOnReach: ['reaches-out-is-a-send'],
+  anyItemVerb: ['item-verbs-guarded'],
   sasNoNodeKey: ['pairing-sas', 'pairing-impostor'],
 };
 for (const [bug, ids] of Object.entries(PLANTED)) {

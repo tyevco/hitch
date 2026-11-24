@@ -277,6 +277,32 @@ export function createNode({ store = createStore(), clock = { now: () => Date.no
     return sign(viewFor(p, store.decisions.get(id).d));
   }
 
+  // ---- items ---------------------------------------------------------------------------
+  // Attention, not consent: offered verbs change only the item's own state.
+  function putItem({ kind = 'kernel.inbox@1', title = 'Something to look at', owner = 'kernel', offers = [], data }) {
+    const id = 'itm_' + randomUlid(), t = iso(now());
+    const it = { spec: SPEC, id, kind, state: 'open', owner, title, offers, created: t, updated: t, rev: 1, ...(data ? { data } : {}) };
+    store.items.set(id, it);
+    changed('items', id, 1, 'create', 'open');
+    return id;
+  }
+  function itemState(p, id, body) {
+    if (!p.client) throw new Refusal('not_a_client');
+    const it = store.items.get(id);
+    if (!it) throw new Refusal('gone');
+    const b = JSON.parse(body || '{}');
+    const e = V.validate('hitch.item.state', b);
+    if (e.length) throw new Refusal('invalid', { message: e.join('; ') });
+    if (!bugs.anyItemVerb && !(it.offers ?? []).some((o) => o.verb === b.verb)) throw new Refusal('invalid', { message: 'verb not offered' });
+    if (b.verb === 'snooze' && !b.until) throw new Refusal('invalid', { message: 'snooze needs until' });
+    it.state = { done: 'done', dismiss: 'dismissed', snooze: 'snoozed' }[b.verb];
+    if (b.until) it.until = b.until; else delete it.until;
+    it.rev++; it.updated = iso(now());
+    audit(`item/${id}`, { event: 'item.' + b.verb, by: p.principal });
+    changed('items', id, it.rev, 'update', it.state);
+    return sign(it);
+  }
+
   // ---- revoke --------------------------------------------------------------------------
   // Self: free. Another client: confirm ceiling + presence. All: local + presence.
   function checkPresence(c, b, need) {
@@ -416,7 +442,7 @@ export function createNode({ store = createStore(), clock = { now: () => Date.no
       sweepExpiry(); sweepLeases();
       if (req.method === 'GET' && path === '/.well-known/hitch') {
         return send(res, 200, { specs: [SPEC], impl: { name: 'toy-node', version: '0.1.0' }, aid, caps: ['sse', 'longpoll'],
-          profiles: ['core', 'decisions', 'pairing', 'feeds', 'messaging'], suites: ['hmac-sha256', 'p256', 'ed25519'],
+          profiles: ['core', 'decisions', 'pairing', 'feeds', 'messaging', 'tasks'], suites: ['hmac-sha256', 'p256', 'ed25519'],
           nodeKey: { suite: 'ed25519', kid, x: nodeKey.pub } });
       }
       if (req.method === 'POST' && path === '/hitch/v1/clients/pairings') return send(res, 202, pairStart(body));
@@ -468,6 +494,8 @@ export function createNode({ store = createStore(), clock = { now: () => Date.no
       }
       if (req.method === 'GET' && path === '/hitch/v1/events') return events(req, res, url, p);
       if (req.method === 'POST' && path === '/hitch/v1/messages') return send(res, 200, postMessage(p, body));
+      const is = path.match(/^\/hitch\/v1\/items\/(itm_[0-9A-Z]+)\/state$/);
+      if (req.method === 'POST' && is) return send(res, 200, itemState(p, is[1], body));
       const ms = path.match(/^\/hitch\/v1\/messages\/(msg_[0-9A-Z]+)\/state$/);
       if (req.method === 'POST' && ms) return send(res, 200, messageState(p, ms[1], body));
       const rv = path.match(/^\/hitch\/v1\/clients\/(c_[A-Za-z0-9]+)\/revoke$/);
@@ -590,7 +618,7 @@ export function createNode({ store = createStore(), clock = { now: () => Date.no
     putContent: (bytes, type = 'text/plain; charset=utf-8', privacy = 'text') => {
       const b = Buffer.from(bytes); const h = 'sha256:' + createHash('sha256').update(b).digest('hex');
       store.content.set(h, { b, type, privacy }); return { hash: h, bytes: b.length };
-    }, answerAs: (p, id, body) => answer(p, id, body), withdraw: (id) => resolve(id, 'withdrawn'), addToken, addClient, revokeClient, issueGrant, trim, setFeed, crashNextExecution: () => { crashNext = true; },
+    }, answerAs: (p, id, body) => answer(p, id, body), withdraw: (id) => resolve(id, 'withdrawn'), addToken, addClient, revokeClient, issueGrant, trim, setFeed, putItem, crashNextExecution: () => { crashNext = true; },
     resolveElsewhere: (id, where) => resolve(id, 'resolved-elsewhere', { answered: { verb: 'approve', by: 'app:herdr', at: iso(now()), where } }),
     executorCalls: (id) => store.executorCalls.get(id) ?? 0,
     publishAs: (principal, type, data) => emit(type, data, { from: { aid, principal } }),

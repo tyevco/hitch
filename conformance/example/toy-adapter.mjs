@@ -47,6 +47,7 @@ export function toyAdapter({ bugs = {} } = {}) {
       return { ...c, ...(pr ? { presence: pr } : {}) };
     },
     setFeed: async (name, data) => node.setFeed(name, data),
+    putItem: async (it) => node.putItem(it),
     crashNextExecution: async () => node.crashNextExecution(),
     publishType: async () => ({ type: 'wins.weekly@1', data: { week: '2026-11-16', wins: [] } }),
   };

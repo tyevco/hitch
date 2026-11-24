@@ -28,9 +28,10 @@
       "enum": [
         "open",
         "done",
-        "dismissed"
+        "dismissed",
+        "snoozed"
       ],
-      "description": "Explicit state; no TTL."
+      "description": "Explicit state; no TTL. Set by the owner mod, or by a client through an offered item verb."
     },
     "owner": {
       "type": "string"
@@ -73,6 +74,36 @@
     "data": {
       "type": "object",
       "description": "Kind-specific fields, validated against types/<kind>.schema.json when the pack has it (e.g. kernel.inbox@1)."
+    },
+    "until": {
+      "$ref": "hitch.defs.schema.json#/$defs/time",
+      "description": "snoozed: when it returns to open"
+    },
+    "offers": {
+      "type": "array",
+      "maxItems": 3,
+      "items": {
+        "type": "object",
+        "required": [
+          "verb"
+        ],
+        "properties": {
+          "verb": {
+            "enum": [
+              "done",
+              "dismiss",
+              "snooze"
+            ]
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 40
+          }
+        },
+        "additionalProperties": false
+      },
+      "description": "Item verbs a client may offer as buttons. Narrow: any paired client, no presence. 'Later' is client-local and never reaches the node."
     }
-  }
+  },
+  "description": "Attention that is not consent: a failed job, red CI, a to-do, a review asked of you. It may offer item verbs (done, dismiss, snooze), which change only the item's own state and never run anything as the person. Anything that sends, merges, deploys, signs in or grants is a decision instead."
 }

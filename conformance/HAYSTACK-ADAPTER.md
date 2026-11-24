@@ -21,6 +21,7 @@ node conformance/server/hitch-check.mjs --adapter ../claude-extended-v2/haystack
 | **P1** | `feeds` | `GET /hitch/v1/feeds/:feed` | `setFeed`, `mintClient` |
 | **P2** | `pairing` | `clients/pairings` (commit, reveal, status), `clients/:cid/revoke`, `clients/revoke-all` | `mintClient`, `principals` (clientConfirm, clientLocal with presence keys), `revokeClient` |
 | **P3** | `decisions` | `GET decisions/:id`, `POST …/answers`, `GET …/audit` | `editDecision`, `executorCalls`, `advanceClock`, `restart`, `issueGrant`, `crashNextExecution` |
+| P5 | `tasks` | `POST /hitch/v1/items/:id/state` | `putItem` |
 | P3+ | `messaging` | `POST /messages`, `POST /messages/:id/state` | `principals.session2` |
 
 P2 cannot finish before P3's answer route exists, because pairing approval is a `hitch.client.pair@1` decision answered at the local tier. Build the answer route's skeleton (the refusal funnel) in P2 and finish it in P3.

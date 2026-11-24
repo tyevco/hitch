@@ -643,6 +643,32 @@ export const CHECKS = [
       assert.deepEqual(ev?.data, { withheld: true });
       assert.ok(ctx.verify(ev), 'redacted events are re-signed');
     } },
+
+  // ---- tasks (items with verbs) --------------------------------------------------------------
+  { id: 'item-verbs', profile: 'tasks', title: 'a client uses an offered item verb (no presence); the item changes state and a change notice follows', needs: ['putItem'],
+    async run(ctx) {
+      const c = ctx.as('clientDecide');
+      const id = await ctx.adapter.putItem({ kind: 'kernel.inbox@1', owner: 'tasks', title: 'Chase Dana for the Q4 numbers', offers: [{ verb: 'done', label: 'Mark it done' }, { verb: 'snooze', label: 'Tomorrow' }], data: { v2kind: 'todo', v2id: 'tasks:12' } });
+      const l = (await c.list('items')).body;
+      const it = l.list.find((x) => x.id === id);
+      ok('hitch.item@1', it); assert.equal(it.state, 'open');
+      const until = new Date(Date.now() + 86400e3).toISOString();
+      const s1 = await c.post(`/hitch/v1/items/${id}/state`, { verb: 'snooze', until });
+      assert.equal(s1.status, 200, JSON.stringify(s1.body)); assert.equal(s1.body.state, 'snoozed'); assert.equal(s1.body.until, until);
+      assert.ok(ctx.verify(s1.body), 'node-signed');
+      const ev = (await c.poll(l.cursor)).body.events.find((e) => e.type === 'hitch.changed@1' && e.data.resource === 'items' && e.data.id === id);
+      assert.ok(ev, 'the owner mod learns of it from hitch.changed@1');
+      assert.equal((await c.post(`/hitch/v1/items/${id}/state`, { verb: 'done' })).body.state, 'done');
+    } },
+  { id: 'item-verbs-guarded', profile: 'tasks', title: 'item verbs: only person-clients, only offered verbs; snooze needs until', needs: ['putItem'],
+    async run(ctx) {
+      const id = await ctx.adapter.putItem({ title: 'A review asked of you', offers: [{ verb: 'dismiss', label: 'Got it' }] });
+      for (const who of ['mod', 'session']) refused(await ctx.as(who).post(`/hitch/v1/items/${id}/state`, { verb: 'dismiss' }), 'not_a_client', `${who}:`);
+      refused(await ctx.as('clientDecide').post(`/hitch/v1/items/${id}/state`, { verb: 'done' }), 'invalid', 'not offered:');
+      const id2 = await ctx.adapter.putItem({ offers: [{ verb: 'snooze' }] });
+      refused(await ctx.as('clientDecide').post(`/hitch/v1/items/${id2}/state`, { verb: 'snooze' }), 'invalid', 'snooze without until:');
+      assert.equal((await ctx.as('clientDecide').post(`/hitch/v1/items/${id}/state`, { verb: 'dismiss' })).body.state, 'dismissed');
+    } },
 ];
 
 // A relaying impostor: forwards every request to the real node, rewriting JSON responses.

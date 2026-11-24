@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hitch.dev/types/hitch.item.state.schema.json",
+  "title": "POST /hitch/v1/items/:id/state",
+  "description": "A person-client uses an item verb the item offers. Narrow tier: no presence. Mods, apps and sessions get not_a_client; a verb not offered gives invalid. The owner mod learns of it from hitch.changed@1 {resource:'items'} and applies it to its own data (the To-dos mod marks the to-do done).",
+  "type": "object",
+  "required": [
+    "verb"
+  ],
+  "properties": {
+    "verb": {
+      "enum": [
+        "done",
+        "dismiss",
+        "snooze"
+      ]
+    },
+    "until": {
+      "$ref": "hitch.defs.schema.json#/$defs/time",
+      "description": "snooze only"
+    }
+  },
+  "additionalProperties": false
+}

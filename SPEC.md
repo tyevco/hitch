@@ -43,7 +43,7 @@ Spec string **`hitch/1`**. It is versioned apart from `cx/1` (the mod contract) 
 | Object | What it is | Built from (v2) |
 |---|---|---|
 | **Decision** | The only way consent enters. It has a bound hash, options with tiers, a state and an audit trail. | Inbox items with actions, plus every gate: `tickets.mjs`, sendgate, pair decide, registry approve, schedule approve, settings confirm, notifiers, watch merge and approve-run, agents policy, queue waits |
-| **Item** | Attention with no buttons (a failed job, red CI, a To-do). It links to its decisions. | `POST /v1/inbox` feeds, with the 15-minute TTL replaced by an explicit state |
+| **Item** | Attention, not consent (a failed job, red CI, a To-do, a review asked of you). It links to its decisions, and may offer **item verbs** (`done`, `dismiss`, `snooze`) that change only its own state. | `POST /v1/inbox` feeds, with the 15-minute TTL replaced by an explicit state |
 | **Action** | Running an answered option: queued, claimed (with a lease), applied or failed. | `state.actions`, `/v1/actions/{poll,claim,done}` |
 | **Feed** | A named, versioned read model (`wins.weekly@1`, `herdr-teams.org@1`). | `kernel/feeds.mjs` |
 | **Session** | An agent session. It can publish and be addressed, and **never answers**. | `/v1/session`, `kernel.sessions@1` |
@@ -186,7 +186,7 @@ flowchart TD
 | Feeds | `GET /hitch/v1/feeds/:owner.:name@:major` (grant-checked) | `/v1/feeds` |
 | Stream | `GET /hitch/v1/events` as SSE (`id: seq`, beat every 25 s) **or** JSON long-poll `&wait=25` | `/api/view/stream`, `GET /wait` |
 | Gap | `410 {code:"gap", resync:[…]}`: re-list, then resume from the list's cursor | hc `missed` |
-| Commands | `POST …/answers`, `POST …/messages` (person-authored), `POST …/presence`, `POST …/publish` (owner types only), `POST /hitch/v1/clients/:cid/revoke`, `POST /hitch/v1/clients/revoke-all` | |
+| Commands | `POST …/answers`, `POST …/messages` (person-authored), `POST /hitch/v1/items/:id/state` (item verbs), `POST …/presence`, `POST …/publish` (owner types only), `POST /hitch/v1/clients/:cid/revoke`, `POST /hitch/v1/clients/revoke-all` | |
 | Feed | `GET /hitch/v1/feeds/:feed` → [`hitch.feed`](types/hitch.feed.schema.json) `{spec, feed, rev, updated, privacy, data, sig}`, node-signed; `data` validates against `types/<feed>.schema.json`. A change emits `hitch.changed@1 {resource:"feeds", id:<feed>, rev}`. Unknown feed: `gone`; client privacy below the feed's class: `privacy`. First pinned feed: [`kernel.connectors@1`](types/kernel.connectors@1.schema.json) (connector status, read-only) |
 | Content | `GET /hitch/v1/content/:hash` (privacy-checked) | |
 
@@ -272,7 +272,7 @@ flowchart TD
 
 **Closed refusal codes:** `not_a_client, tier, scope, step_up_required, stale, already, gone, withdrawn, expired, replay, revoked, gap, unknown_type, privacy, rate, suite, unauthenticated, invalid`. Each has a fixed HTTP status in [`codes.json`](codes.json).
 
-**The kit is built** (P0): [`types/`](types), [`codes.json`](codes.json), [`catalogue.json`](catalogue.json) and [`conformance/`](conformance/README.md): `hitch-check` (server, 54 checks over core, decisions, pairing, feeds and messaging), `hitch-client-check` with `hitch-mock` (client, 12 checks) and `hitch-catalog-check` (the `sdk:check` gate; vendor kinds marked `vendorPending` in the catalogue warn without failing it, and `--strict` fails on them too; `--audit` checks the whole catalogue, where `declaredOnly` kinds (declared, not emitted yet) warn). The kit tests itself against an in-repo toy node and naive client, each with planted bugs that must turn their checks red. A Python stdlib client kit for pairview (`conformance/python/`) runs the same client checks over the hmac suite.
+**The kit is built** (P0): [`types/`](types), [`codes.json`](codes.json), [`catalogue.json`](catalogue.json) and [`conformance/`](conformance/README.md): `hitch-check` (server, 56 checks over core, decisions, pairing, feeds, messaging and tasks), `hitch-client-check` with `hitch-mock` (client, 12 checks) and `hitch-catalog-check` (the `sdk:check` gate; vendor kinds marked `vendorPending` in the catalogue warn without failing it, and `--strict` fails on them too; `--audit` checks the whole catalogue, where `declaredOnly` kinds (declared, not emitted yet) warn). The kit tests itself against an in-repo toy node and naive client, each with planted bugs that must turn their checks red. A Python stdlib client kit for pairview (`conformance/python/`) runs the same client checks over the hmac suite.
 
 **Profiles:** `core` (required: discovery, hello, lists, events, pair), `decisions`, `feeds`, `messaging`, `tasks`, `push`, `relay`, `federation`. `/.well-known` may claim only the profiles that passed.
 
@@ -322,6 +322,8 @@ Pinned 2026-11-23 with the reference client. The kit's [`conformance/lib/wire.mj
 | Content | `GET /hitch/v1/content/:hash` → raw bytes, the stored Content-Type, header `hitch-digest`. Clients hash what they got and compare with the preview row's `digest`; the header is not trusted |
 
 **Messaging.** `POST /hitch/v1/messages` takes [`hitch.message.post`](types/hitch.message.post.schema.json) `{to, intent?, text, replyTo?, idem?}` and is **person-authored only**: mods and sessions get `not_a_client` (agents publish their own types). `from` is stamped; a body `from` is ignored. A repeated `idem` from the same client returns the first message. The node emits `message.received@1` with the envelope `to`. **A session sees only events and messages addressed to itself** (plus untargeted events), never another session's. Delivery moves forward only (`queued → sent → seen → acked`) through `POST /hitch/v1/messages/:id/state {state}`, which **only the addressee session** may call (`scope` otherwise; `invalid` going backwards), and each step emits `message.delivery@1`. `held`, `failed`, `expired` and `disputed` are set by the node or a transport.
+
+**Item verbs.** Consent is a decision; attention is an item. An item may offer up to three verbs (`offers`): `done`, `dismiss` and `snooze` (`until` required). A person-client uses one with `POST /hitch/v1/items/:id/state {verb, until?}` ([`hitch.item.state`](types/hitch.item.state.schema.json)). These are narrow, need no presence, and are audited; mods and sessions get `not_a_client`, and a verb not offered gives `invalid`. The owner mod learns of it from `hitch.changed@1 {resource:"items"}` and applies it to its own data. "Later" is client-local and never reaches the node. **Rule for new kinds:** if pressing the button sends, merges, deploys, signs in, grants or otherwise acts as the person, it is a decision. If it only says "seen", "done" or "not now", it is an item verb.
 
 **Privacy redaction.** A client whose privacy class is below an event's sees that event with `data: {withheld: true}`, re-signed by the node. A message it lists has no `text` and carries `withheld: true`. A feed above its class gives `privacy`.
 
