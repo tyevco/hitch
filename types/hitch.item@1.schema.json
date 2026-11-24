@@ -3,20 +3,76 @@
   "$id": "https://hitch.dev/types/hitch.item@1.schema.json",
   "title": "hitch.item@1: attention with no buttons",
   "type": "object",
-  "required": ["spec", "id", "kind", "state", "owner", "title", "created", "updated"],
+  "required": [
+    "spec",
+    "id",
+    "kind",
+    "state",
+    "owner",
+    "title",
+    "created",
+    "updated"
+  ],
   "properties": {
-    "spec": { "$ref": "hitch.defs.schema.json#/$defs/spec" },
-    "id": { "type": "string", "pattern": "^itm_[0-9A-HJKMNP-TV-Z]{26}$" },
-    "kind": { "$ref": "hitch.defs.schema.json#/$defs/typeName" },
-    "state": { "enum": ["open", "done", "dismissed"], "description": "Explicit state; no TTL." },
-    "owner": { "type": "string" },
-    "title": { "type": "string", "maxLength": 200 },
-    "summary": { "type": "string", "maxLength": 2000 },
-    "level": { "enum": ["info", "warn", "error"] },
-    "link": { "type": "string", "maxLength": 2000 },
-    "decisions": { "type": "array", "items": { "type": "string", "pattern": "^dec_" } },
-    "created": { "$ref": "hitch.defs.schema.json#/$defs/time" },
-    "updated": { "$ref": "hitch.defs.schema.json#/$defs/time" },
-    "sig": { "$ref": "hitch.defs.schema.json#/$defs/sig" }
+    "spec": {
+      "$ref": "hitch.defs.schema.json#/$defs/spec"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^itm_[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "kind": {
+      "$ref": "hitch.defs.schema.json#/$defs/typeName"
+    },
+    "state": {
+      "enum": [
+        "open",
+        "done",
+        "dismissed"
+      ],
+      "description": "Explicit state; no TTL."
+    },
+    "owner": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string",
+      "maxLength": 200
+    },
+    "summary": {
+      "type": "string",
+      "maxLength": 2000
+    },
+    "level": {
+      "enum": [
+        "info",
+        "warn",
+        "error"
+      ]
+    },
+    "link": {
+      "type": "string",
+      "maxLength": 2000
+    },
+    "decisions": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^dec_"
+      }
+    },
+    "created": {
+      "$ref": "hitch.defs.schema.json#/$defs/time"
+    },
+    "updated": {
+      "$ref": "hitch.defs.schema.json#/$defs/time"
+    },
+    "sig": {
+      "$ref": "hitch.defs.schema.json#/$defs/sig"
+    },
+    "data": {
+      "type": "object",
+      "description": "Kind-specific fields, validated against types/<kind>.schema.json when the pack has it (e.g. kernel.inbox@1)."
+    }
   }
 }

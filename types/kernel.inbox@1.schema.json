@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hitch.dev/types/kernel.inbox@1.schema.json",
+  "title": "kernel.inbox@1 (item kind, transitional until P7)",
+  "description": "A v2 Inbox item with no buttons, mirrored as a hitch.item@1 during the overlap. One kind for all of them: v2kind says which. privacy meta; the summary is withheld from a client below text. Items that need an answer are decisions, never this. Gone at P7, when each surviving v2 kind becomes its own item type.",
+  "type": "object",
+  "required": [
+    "v2kind",
+    "v2id"
+  ],
+  "properties": {
+    "v2kind": {
+      "type": "string",
+      "maxLength": 60
+    },
+    "v2id": {
+      "type": "string",
+      "maxLength": 200
+    },
+    "mod": {
+      "type": "string",
+      "maxLength": 40
+    }
+  },
+  "additionalProperties": false
+}
