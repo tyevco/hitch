@@ -54,7 +54,7 @@ The toy node's adapter, [`example/toy-adapter.mjs`](example/toy-adapter.mjs), is
 | Profile | Checks |
 |---|---|
 | core | discovery, sockhello, hello, unauthenticated, request-replay, lists, envelopes, sse-equals-longpoll, resume, longpoll-waits, gap, from-stamped, publish-owner-only |
-| decisions | decision-signed, not-a-client, decide-answer, tier, narrow-decline, step-up, local-step-up, suite, stale, one-winner, answer-replay, answer-window, verb-offered, revoked, waits-forever, expiry-never-approves, no-safety-default, grant-safety, uncertain-never-reruns, uncertain-leave-it |
+| decisions | decision-signed, not-a-client, decide-answer, tier, narrow-decline, send-back-below-floor, step-up, local-step-up, suite, stale, one-winner, answer-replay, answer-window, verb-offered, revoked, waits-forever, expiry-never-approves, no-safety-default, grant-safety, uncertain-never-reruns, uncertain-leave-it |
 | pairing | pairing-sas, pairing-impostor, pairing-commit, agent-bootstrap, pairing-approve, pairing-hmac-seal, pairing-presence, revoke-self, revoke-other, revoke-all (always runs last: it revokes the adapter's clients) |
 | feeds | feed-read, feed-changed, feed-guards |
 | messaging | message-post, message-idem, message-person-only, message-session-scope, message-delivery, message-privacy |

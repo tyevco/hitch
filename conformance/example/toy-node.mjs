@@ -71,9 +71,12 @@ export function createNode({ store = createStore(), clock = { now: () => Date.no
     const safety = inherit?.safety ?? cat?.safety ?? 'none';
     if (safety !== 'none' && (onExpire === 'fallback' || defaultable)) throw new Refusal('invalid', { message: 'safety kinds take no default' });
     const floor = inherit?.floor ?? (cat?.floor === 'vendor' || !cat ? 'local' : cat.floor);
-    const narrow = new Set(cat?.narrowVerbs ?? ['decline']);
+    // verbFloors: verbs that run no side effect may sit below the kind's floor
+    // (default: decline is narrow). Every other verb gets at least the floor.
+    const vf = { decline: 'narrow', ...(cat?.verbFloors ?? {}) };
     options = (options ?? [{ verb: 'approve', label: 'Approve' }, { verb: 'decline', label: 'Decline' }]).map((o) => {
-      const t = narrow.has(o.verb) ? 'narrow' : o.tier && tierRank(o.tier) > tierRank(floor) ? o.tier : floor;
+      const base = vf[o.verb] ?? floor;
+      const t = o.tier && tierRank(o.tier) > tierRank(base) ? o.tier : base;
       return { ...o, tier: t };
     });
     const id = 'dec_' + randomUlid();

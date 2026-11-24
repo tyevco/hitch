@@ -32,6 +32,15 @@ test('the SPEC examples validate', () => {
     iat: 1, exp: 121, nonce: 'abcdefghijklmnop', presence: { suite: 'webauthn', kid: 'cred', v: 'sig', ad: 'ad', cd: 'cd' } }), []);
 });
 
+test('every keyword in the pack is exercised: a report.send@1 with the v2 bridge validates, and maxProperties bites', () => {
+  const H = 'sha256:' + 'b'.repeat(64);
+  const args = { week: '2026-11-16', to: ['sam@example.com'], subject: 'Weekly status', body: { content: H, bytes: 10 },
+    v2: { item: 'report:2026-11-16', actions: { approve: { mod: 'report', kind: 'send', args: { week: '2026-11-16' } } } } };
+  assert.deepEqual(V.validate('report.send@1', args), []);
+  const many = Object.fromEntries(Array.from({ length: 9 }, (_, i) => [`v${i}`, { mod: 'm', kind: 'k', args: {} }]));
+  assert.match(V.validate('report.send@1', { ...args, v2: { ...args.v2, actions: many } }).join('|'), /more than 8 properties/);
+});
+
 test('the validator rejects what it should', () => {
   const bad = (n, v, re) => assert.match(V.validate(n, v).join('|'), re);
   { const { summary, ...noSummary } = decision; bad('hitch.decision@1', noSummary, /missing "summary"/); }
@@ -54,6 +63,11 @@ test('catalogue: every hitch-owned type has a schema; decision kinds have floors
     if (c.decision) assert.ok(['decide', 'confirm', 'local', 'vendor', 'inherit'].includes(c.floor), t);
     if (c.floor === 'inherit') { assert.equal(c.safety, 'inherit', `${t}: an inherited floor inherits safety too`); continue; }
     if (c.decision && c.safety !== 'none') assert.ok(['confirm', 'local'].includes(c.floor), `${t} is a safety kind`);
+    const R = ['narrow', 'decide', 'confirm', 'local'];
+    for (const [verb, f] of Object.entries(c.verbFloors ?? {})) {
+      assert.ok(['decline', 'deny', 'sendBack', 'discard'].includes(verb), `${t}: verbFloors names ${verb}, which may run a side effect`);
+      assert.ok(R.includes(f) && R.indexOf(f) <= R.indexOf(c.floor === 'vendor' ? 'local' : c.floor), `${t}: verbFloors.${verb} above the floor`);
+    }
   }
 });
 

@@ -97,7 +97,7 @@ flowchart TD
 }
 ```
 
-**Initial catalogue.** Floors are the minimum tier. A mod can raise a tier, never lower it.
+**Initial catalogue.** Floors are the minimum tier. A mod can raise a tier, never lower it. The floor protects the verb that runs the side effect. Verbs that run nothing may sit lower, but only where the catalogue says so, in `verbFloors`: `decline` is `narrow` everywhere, `deny` is `narrow` on `queue.*`, and `sendBack` is `decide` on `report.send@1` and `outbox.send@1`, because sending text back to the agent reaches nobody else. `verbFloors` may name only `decline`, `deny`, `sendBack` or `discard`, never the verb that executes.
 
 | Type | Owner | Data sketch | Floor |
 |---|---|---|---|
@@ -272,7 +272,7 @@ flowchart TD
 
 **Closed refusal codes:** `not_a_client, tier, scope, step_up_required, stale, already, gone, withdrawn, expired, replay, revoked, gap, unknown_type, privacy, rate, suite, unauthenticated, invalid`. Each has a fixed HTTP status in [`codes.json`](codes.json).
 
-**The kit is built** (P0): [`types/`](types), [`codes.json`](codes.json), [`catalogue.json`](catalogue.json) and [`conformance/`](conformance/README.md): `hitch-check` (server, 52 checks over core, decisions, pairing, feeds and messaging), `hitch-client-check` with `hitch-mock` (client, 12 checks) and `hitch-catalog-check` (the `sdk:check` gate). The kit tests itself against an in-repo toy node and naive client, each with planted bugs that must turn their checks red. A Python stdlib client kit for pairview (`conformance/python/`) runs the same client checks over the hmac suite.
+**The kit is built** (P0): [`types/`](types), [`codes.json`](codes.json), [`catalogue.json`](catalogue.json) and [`conformance/`](conformance/README.md): `hitch-check` (server, 53 checks over core, decisions, pairing, feeds and messaging), `hitch-client-check` with `hitch-mock` (client, 12 checks) and `hitch-catalog-check` (the `sdk:check` gate). The kit tests itself against an in-repo toy node and naive client, each with planted bugs that must turn their checks red. A Python stdlib client kit for pairview (`conformance/python/`) runs the same client checks over the hmac suite.
 
 **Profiles:** `core` (required: discovery, hello, lists, events, pair), `decisions`, `feeds`, `messaging`, `tasks`, `push`, `relay`, `federation`. `/.well-known` may claim only the profiles that passed.
 

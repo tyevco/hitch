@@ -12,7 +12,7 @@ export const TYPES_DIR = fileURLToPath(new URL('../../types/', import.meta.url))
 
 const KNOWN = new Set(['$schema', '$id', '$defs', '$comment', 'title', 'description', 'examples', 'default',
   'type', 'enum', 'const', 'required', 'properties', 'additionalProperties', 'items', 'minItems', 'maxItems',
-  'minLength', 'maxLength', 'pattern', 'minimum', 'maximum', '$ref', 'oneOf', 'anyOf', 'allOf', 'format',
+  'minLength', 'maxLength', 'pattern', 'minimum', 'maximum', 'minProperties', 'maxProperties', '$ref', 'oneOf', 'anyOf', 'allOf', 'format',
   'x-hitch']);
 
 export function loadPack(dir = TYPES_DIR) {
@@ -69,6 +69,9 @@ export function makeValidator(pack = loadPack()) {
     }
     if (typeOf(v) === 'object') {
       for (const r of s.required ?? []) if (!(r in v)) errs.push(`${path}: missing "${r}"`);
+      const nk = Object.keys(v).length;
+      if (s.minProperties != null && nk < s.minProperties) errs.push(`${path}: fewer than ${s.minProperties} properties`);
+      if (s.maxProperties != null && nk > s.maxProperties) errs.push(`${path}: more than ${s.maxProperties} properties`);
       const props = s.properties ?? {};
       for (const [k, x] of Object.entries(v)) {
         if (k in props) check(props[k], x, `${path}.${k}`, file, errs);

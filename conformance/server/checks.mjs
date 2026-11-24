@@ -203,6 +203,17 @@ export const CHECKS = [
       assert.equal(r.body.outcome, 'declined');
       assert.equal(await adapter.executorCalls?.(id) ?? 0, 0, 'a decline never runs the executor');
     } },
+  { id: 'send-back-below-floor', profile: 'decisions', title: 'sendBack on a send is decide (it reaches nobody else) and runs nothing; approve stays confirm', needs: ['executorCalls'],
+    async run({ adapter, as }) {
+      const id = await adapter.requestDecision({ ...send, options: [{ verb: 'approve', label: 'Send' }, { verb: 'sendBack', label: 'Send back', needsText: true, maxText: 2000 }, { verb: 'decline' }] });
+      const d = (await as('clientDecide').decision(id)).body;
+      assert.equal(d.options.find((o) => o.verb === 'approve').tier, 'confirm');
+      assert.equal(d.options.find((o) => o.verb === 'sendBack').tier, 'decide', 'catalogue verbFloors {sendBack: decide}');
+      const r = await as('clientDecide').answer(id, 'sendBack', { text: 'Shorter, please' });
+      assert.equal(r.status, 200, JSON.stringify(r.body));
+      assert.equal(r.body.outcome, 'sent-back');
+      assert.equal(await adapter.executorCalls(id), 0, 'a send-back never runs the executor');
+    } },
   { id: 'step-up', profile: 'decisions', title: 'confirm without a presence proof gives step_up_required; with one it is accepted',
     async run({ adapter, as }) {
       const id = await adapter.requestDecision(send);
