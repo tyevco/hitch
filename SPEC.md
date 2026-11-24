@@ -272,7 +272,7 @@ flowchart TD
 
 **Closed refusal codes:** `not_a_client, tier, scope, step_up_required, stale, already, gone, withdrawn, expired, replay, revoked, gap, unknown_type, privacy, rate, suite, unauthenticated, invalid`. Each has a fixed HTTP status in [`codes.json`](codes.json).
 
-**The kit is built** (P0): [`types/`](types), [`codes.json`](codes.json), [`catalogue.json`](catalogue.json) and [`conformance/`](conformance/README.md): `hitch-check` (server, 51 checks over core, decisions, pairing, feeds and messaging), `hitch-client-check` with `hitch-mock` (client, 12 checks) and `hitch-catalog-check` (the `sdk:check` gate). The kit tests itself against an in-repo toy node and naive client, each with planted bugs that must turn their checks red. A Python stdlib client kit for pairview (`conformance/python/`) runs the same client checks over the hmac suite.
+**The kit is built** (P0): [`types/`](types), [`codes.json`](codes.json), [`catalogue.json`](catalogue.json) and [`conformance/`](conformance/README.md): `hitch-check` (server, 52 checks over core, decisions, pairing, feeds and messaging), `hitch-client-check` with `hitch-mock` (client, 12 checks) and `hitch-catalog-check` (the `sdk:check` gate). The kit tests itself against an in-repo toy node and naive client, each with planted bugs that must turn their checks red. A Python stdlib client kit for pairview (`conformance/python/`) runs the same client checks over the hmac suite.
 
 **Profiles:** `core` (required: discovery, hello, lists, events, pair), `decisions`, `feeds`, `messaging`, `tasks`, `push`, `relay`, `federation`. `/.well-known` may claim only the profiles that passed.
 
@@ -331,9 +331,18 @@ Pinned 2026-11-23 with the reference client. The kit's [`conformance/lib/wire.mj
 |---|---|---|
 | Commit | `POST /hitch/v1/clients/pairings` | [`hitch.pairing.request`](types/hitch.pairing.request.schema.json) `{name, suite, pub, commit, presence?[]}`, `commit = sha256(JCS({pub, nonce}))`, nonce 16 random bytes → `202 {spec, pairing, serverNonce, expiresIn}` |
 | Reveal | `POST /hitch/v1/clients/pairings/:pairing/reveal` | `{nonce}` → `{spec, pairing, sas, decision}`, after checking the commit |
-| Status | `GET /hitch/v1/clients/pairings/:pairing` | `{spec, pairing, state: pending\|paired\|declined\|expired, client?, ceiling?, aid?}` |
+| Status | `GET /hitch/v1/clients/pairings/:pairing` | `{spec, pairing, state: pending\|paired\|declined\|expired, client?, ceiling?, aid?, sealed?}`; `sealed` only for `hmac-sha256`, until that client's first valid signed request |
 
 SAS = the first 64 bits of sha256(JCS({commit, clientNonce, serverNonce, pub, nodeKey})) mod 10⁶, zero-padded to 6 digits, where `nodeKey` is the node key's `x` as the client received it. Binding the node key means an impostor on the socket, loopback port or a typed URL that relays the pairing but hands the client its own node key produces a mismatched code; the QR path already carries the key fingerprint. The reveal raises a `hitch.client.pair@1` decision (floor local, safety grant) whose args and preview carry the presence keys (`{kid, suite, key: sha256(JCS(pub))}`). Starting ceilings are in Auth and trust: the first client local, every later client decide.
+
+**hmac-sha256 pairing: the sealed secret.** Stdlib-only on the client, since this suite exists for stdlib clients such as pairview. The pairing `pub` is the client's X25519 key (raw 32 bytes). Once the pairing is approved, the node makes a 32-byte secret and seals it as `sealed = {alg:"x25519-hkdf-sha256-hmac/1", epk, iv, ct, tag}` (all base64url):
+
+- `epk` is a fresh X25519 key and `iv` is 16 random bytes.
+- shared = X25519(e, pub). salt = sha256(JCS({commit, serverNonce})) as raw bytes. okm = HKDF-SHA256(salt, shared, info `"hitch-hmac-secret/1"`, 64 bytes). `k_enc` = okm[0:32] and `k_mac` = okm[32:64].
+- ct = secret XOR HMAC-SHA256(k_enc, iv ‖ 0x00000000).
+- tag = HMAC-SHA256(k_mac, iv ‖ ct ‖ JCS({pairing, client, aid})). The client checks the tag in constant time before using the secret.
+
+Status carries `sealed` until the node sees the first valid signed request from that `cid`; after that it is omitted. The kit has `wire.mjs` `seal`/`openSeal` and `hitch_wire.py` `open_seal`, with a pure-Python X25519. Checked by `pairing-hmac-seal`.
 
 **sockhello.** Before sending any credential over the local socket or the loopback TCP port, a client posts `POST /hitch/v1/sockhello {spec, challenge}` (32 random bytes, base64url; unauthenticated) and gets `{spec, aid, challenge, sig}`, where `sig` is the node key over JCS({purpose:"hitch-sockhello", spec:"hitch/1", aid, challenge}). The client checks the echo and the signature against the node key **pinned at pairing**, never against a discovery document fetched over the same socket. On failure it sends no credentials. Once per connection pool (per CLI run) is enough. There is no default socket path: it is recorded at pairing, and `HITCH_SOCKET` overrides it.
 

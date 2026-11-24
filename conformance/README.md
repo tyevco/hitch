@@ -55,7 +55,7 @@ The toy node's adapter, [`example/toy-adapter.mjs`](example/toy-adapter.mjs), is
 |---|---|
 | core | discovery, sockhello, hello, unauthenticated, request-replay, lists, envelopes, sse-equals-longpoll, resume, longpoll-waits, gap, from-stamped, publish-owner-only |
 | decisions | decision-signed, not-a-client, decide-answer, tier, narrow-decline, step-up, local-step-up, suite, stale, one-winner, answer-replay, answer-window, verb-offered, revoked, waits-forever, expiry-never-approves, no-safety-default, grant-safety, uncertain-never-reruns, uncertain-leave-it |
-| pairing | pairing-sas, pairing-impostor, pairing-commit, agent-bootstrap, pairing-approve, pairing-presence, revoke-self, revoke-other, revoke-all (always runs last: it revokes the adapter's clients) |
+| pairing | pairing-sas, pairing-impostor, pairing-commit, agent-bootstrap, pairing-approve, pairing-hmac-seal, pairing-presence, revoke-self, revoke-other, revoke-all (always runs last: it revokes the adapter's clients) |
 | feeds | feed-read, feed-changed, feed-guards |
 | messaging | message-post, message-idem, message-person-only, message-session-scope, message-delivery, message-privacy |
 
@@ -92,7 +92,7 @@ Example: [`example/naive-client.mjs`](example/naive-client.mjs). Use `--ceiling 
 
 | File | What |
 |---|---|
-| `hitch_wire.py` | JCS (byte-identical to the JS kit, cross-checked in the tests), hashes, hmac-sha256 request signing, `shown_hash`, `build_answer` |
+| `hitch_wire.py` | JCS (byte-identical to the JS kit, cross-checked in the tests), hashes, hmac-sha256 request signing, `shown_hash`, `build_answer`, and `gen_x25519` + `open_seal` for the hmac pairing (pure-Python X25519, RFC 7748 vector tested) |
 | `hitch_client_check.py` | the 12 client checks, driving `hitch-mock` through `client/hitch-mock-serve.mjs` (a loopback JSON control API) |
 | `naive_client.py` | an example adapter (`make_client(env)`) and the self-test subject |
 

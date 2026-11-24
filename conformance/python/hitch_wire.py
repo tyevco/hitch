@@ -109,3 +109,77 @@ def build_answer(decision, aid, verb, text=None, iat=None, ttl=120, nonce=None):
     if text is not None:
         a["text"] = text
     return a
+
+
+# ---- hmac-sha256 pairing: open the sealed secret (SPEC "Pairing wire") ------
+# Pure-Python X25519 (RFC 7748). Not constant-time; it runs once, at pairing,
+# on a key that lives only for that pairing.
+_P = 2 ** 255 - 19
+_A24 = 121665
+
+
+def _clamp(k):
+    k = bytearray(k)
+    k[0] &= 248
+    k[31] &= 127
+    k[31] |= 64
+    return int.from_bytes(bytes(k), "little")
+
+
+def x25519(k, u):
+    """X25519(k, u): both 32-byte strings; returns the 32-byte shared value."""
+    k = _clamp(k)
+    x1 = int.from_bytes(u, "little") & ((1 << 255) - 1)
+    x2, z2, x3, z3, swap = 1, 0, x1, 1, 0
+    for t in reversed(range(255)):
+        kt = (k >> t) & 1
+        swap ^= kt
+        if swap:
+            x2, x3, z2, z3 = x3, x2, z3, z2
+        swap = kt
+        a, b = (x2 + z2) % _P, (x2 - z2) % _P
+        aa, bb = a * a % _P, b * b % _P
+        e = (aa - bb) % _P
+        c, d = (x3 + z3) % _P, (x3 - z3) % _P
+        da, cb = d * a % _P, c * b % _P
+        x3, z3 = (da + cb) ** 2 % _P, x1 * (da - cb) ** 2 % _P
+        x2, z2 = aa * bb % _P, e * (aa + _A24 * e) % _P
+    if swap:
+        x2, z2 = x3, z3
+    return (x2 * pow(z2, _P - 2, _P) % _P).to_bytes(32, "little")
+
+
+def gen_x25519():
+    """(private 32 bytes, public base64url) for an hmac-sha256 pairing request."""
+    priv = os.urandom(32)
+    return priv, b64u(x25519(priv, (9).to_bytes(32, "little")))
+
+
+def _hkdf(salt, ikm, info, length):
+    prk = hmac.new(salt, ikm, hashlib.sha256).digest()
+    okm, t, i = b"", b"", 1
+    while len(okm) < length:
+        t = hmac.new(prk, t + info + bytes([i]), hashlib.sha256).digest()
+        okm += t
+        i += 1
+    return okm[:length]
+
+
+SEAL_ALG = "x25519-hkdf-sha256-hmac/1"
+
+
+def open_seal(priv, sealed, commit, server_nonce, pairing, client, aid):
+    """The 32-byte hmac secret from a pairing status `sealed`. Raises ValueError on a bad tag."""
+    if sealed.get("alg") != SEAL_ALG:
+        raise ValueError("open_seal: unknown alg")
+    shared = x25519(priv, unb64u(sealed["epk"]))
+    salt = hashlib.sha256(jcs({"commit": commit, "serverNonce": server_nonce}).encode("utf-8")).digest()
+    okm = _hkdf(salt, shared, b"hitch-hmac-secret/1", 64)
+    k_enc, k_mac = okm[:32], okm[32:]
+    iv, ct = unb64u(sealed["iv"]), unb64u(sealed["ct"])
+    ad = jcs({"pairing": pairing, "client": client, "aid": aid}).encode("utf-8")
+    want = hmac.new(k_mac, iv + ct + ad, hashlib.sha256).digest()
+    if not hmac.compare_digest(want, unb64u(sealed["tag"])):
+        raise ValueError("open_seal: bad tag")
+    ks = hmac.new(k_enc, iv + b"\x00\x00\x00\x00", hashlib.sha256).digest()
+    return bytes(a ^ b for a, b in zip(ct, ks))

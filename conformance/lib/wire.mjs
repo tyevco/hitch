@@ -1,7 +1,7 @@
 // hitch/1 wire primitives: canonical JSON, hashes, node signatures, request
 // signing, shown hash and presence. Normative: SPEC.md "Wire details".
 // Node stdlib only.
-import { createHash, createHmac, createPublicKey, sign, verify, generateKeyPairSync, randomBytes } from 'node:crypto';
+import { createHash, createHmac, createPublicKey, diffieHellman, hkdfSync, timingSafeEqual, sign, verify, generateKeyPairSync, randomBytes } from 'node:crypto';
 
 export const SPEC = 'hitch/1';
 export const TIERS = ['narrow', 'decide', 'confirm', 'local'];
@@ -139,3 +139,39 @@ export const randomUlid = () => {
   return s;
 };
 
+
+// ---- hmac-sha256 pairing: the sealed secret (SPEC "Pairing wire") -----------
+// Stdlib-only on the client side: X25519 + HKDF-SHA256 + an HMAC-SHA256 stream
+// and tag. The client's pairing pub is its X25519 key (raw 32 bytes, base64url).
+export const SEAL_ALG = 'x25519-hkdf-sha256-hmac/1';
+export function genX25519() {
+  const { privateKey, publicKey } = generateKeyPairSync('x25519');
+  return { privateKey, publicKey, pub: publicKey.export({ format: 'jwk' }).x };
+}
+const x25519Pub = (x) => createPublicKey({ key: { kty: 'OKP', crv: 'X25519', x }, format: 'jwk' });
+function sealKeys(shared, { commit, serverNonce }) {
+  const salt = createHash('sha256').update(jcs({ commit, serverNonce }), 'utf8').digest();
+  const okm = Buffer.from(hkdfSync('sha256', shared, salt, 'hitch-hmac-secret/1', 64));
+  return { kEnc: okm.subarray(0, 32), kMac: okm.subarray(32, 64) };
+}
+const keystream = (kEnc, iv) => createHmac('sha256', kEnc).update(Buffer.concat([iv, Buffer.alloc(4)])).digest();
+const sealTag = (kMac, iv, ct, ad) => createHmac('sha256', kMac).update(Buffer.concat([iv, ct, Buffer.from(jcs(ad), 'utf8')])).digest();
+
+export function seal({ pub, secret, commit, serverNonce, pairing, client, aid }) {
+  const e = genX25519();
+  const { kEnc, kMac } = sealKeys(diffieHellman({ privateKey: e.privateKey, publicKey: x25519Pub(pub) }), { commit, serverNonce });
+  const iv = randomBytes(16);
+  const ks = keystream(kEnc, iv);
+  const ct = Buffer.from(secret.map ? secret : [...secret]).map((b, i) => b ^ ks[i]);
+  return { alg: SEAL_ALG, epk: e.pub, iv: b64u(iv), ct: b64u(ct), tag: b64u(sealTag(kMac, iv, ct, { pairing, client, aid })) };
+}
+export function openSeal({ privateKey, sealed, commit, serverNonce, pairing, client, aid }) {
+  if (sealed.alg !== SEAL_ALG) throw new Error('openSeal: unknown alg');
+  const { kEnc, kMac } = sealKeys(diffieHellman({ privateKey, publicKey: x25519Pub(sealed.epk) }), { commit, serverNonce });
+  const iv = unb64u(sealed.iv), ct = unb64u(sealed.ct);
+  const want = sealTag(kMac, iv, ct, { pairing, client, aid });
+  const got = unb64u(sealed.tag);
+  if (got.length !== want.length || !timingSafeEqual(got, want)) throw new Error('openSeal: bad tag');
+  const ks = keystream(kEnc, iv);
+  return Buffer.from(ct.map((b, i) => b ^ ks[i]));
+}

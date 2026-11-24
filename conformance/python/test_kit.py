@@ -32,6 +32,23 @@ class Wire(unittest.TestCase):
         self.assertEqual(set(h), {"hitch-client", "hitch-nonce", "hitch-iat", "hitch-sig"})
 
 
+    def test_x25519_rfc7748_vector(self):
+        k = bytes.fromhex("a546e36bf0527c9d3b16154b82465edd62144c0ac1fc5a18506a2244ba449ac4")
+        u = bytes.fromhex("e6db6867583030db3594c1a424b15f7c726624ec26b3353b10a903a6d0ab1c4c")
+        self.assertEqual(w.x25519(k, u).hex(), "c3da55379de9c6908e94ea4df28d084f32eccf03491c71f754b4075577a28552")
+
+    def test_open_seal_made_by_the_node_kit(self):
+        priv, pub = w.gen_x25519()
+        bind = {"commit": "sha256:" + "a" * 64, "serverNonce": "srv", "pairing": "pr_1", "client": "c_1", "aid": "node01"}
+        js = ("import('%s').then(w=>{const a=JSON.parse(process.argv[1]);const s=Buffer.alloc(32,7);"
+              "console.log(JSON.stringify(w.seal({pub:a.pub,secret:s,...a.bind})))})") % WIRE_MJS.replace("\\", "/")
+        sealed = json.loads(subprocess.check_output(["node", "-e", js, json.dumps({"pub": pub, "bind": bind})], text=True))
+        b = {"commit": bind["commit"], "server_nonce": "srv", "pairing": "pr_1", "client": "c_1", "aid": "node01"}
+        self.assertEqual(w.open_seal(priv, sealed, **b), bytes([7]) * 32)
+        with self.assertRaises(ValueError):
+            w.open_seal(priv, sealed, **dict(b, pairing="pr_2"))
+
+
 class ClientSuite(unittest.TestCase):
     def test_naive_client_passes(self):
         r = run_client_checks(lambda env: NaiveClient(env), log=QUIET)

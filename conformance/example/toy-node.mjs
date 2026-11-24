@@ -6,7 +6,7 @@ import http from 'node:http';
 import { randomBytes, createHash } from 'node:crypto';
 import {
   SPEC, tierRank, jcs, hashOf, shownHash, genKey, signObject, verifyBytes, importPub,
-  requestString, presenceBytes, randomUlid, b64u, nodeKid,
+  requestString, presenceBytes, randomUlid, b64u, nodeKid, seal,
 } from '../lib/wire.mjs';
 import { makeValidator } from '../lib/schema.mjs';
 import { catalogue } from '../catalog-check.mjs';
@@ -184,6 +184,7 @@ export function createNode({ store = createStore(), clock = { now: () => Date.no
       const s = requestString({ aid, method: req.method, path: req.url, body, nonce: h['hitch-nonce'], iat });
       if (!verifyBytes(c.ver, s, h['hitch-sig'] ?? '')) throw new Refusal('unauthenticated', { message: 'bad signature' });
       if (c.state === 'revoked') throw new Refusal('revoked');
+      c.used = true;
       const nk = `req:${c.id}:${h['hitch-nonce']}`;
       if (store.nonces.has(nk)) throw new Refusal('replay');
       store.nonces.set(nk, iat + 120);
@@ -350,13 +351,20 @@ export function createNode({ store = createStore(), clock = { now: () => Date.no
     const dec = p.decision && store.decisions.get(p.decision)?.d;
     const state = p.state === 'paired' ? 'paired' : dec?.outcome === 'declined' ? 'declined'
       : dec?.state === 'resolved' ? 'expired' : 'pending';
-    return { spec: SPEC, pairing: id, state, ...(p.cid ? { client: p.cid, ceiling: store.clients.get(p.cid).ceiling, aid } : {}) };
+    const c = p.cid && store.clients.get(p.cid);
+    return { spec: SPEC, pairing: id, state, ...(c ? { client: p.cid, ceiling: c.ceiling, aid } : {}),
+      ...(c && p.sealed && !c.used ? { sealed: p.sealed } : {}) }; // until the client's first signed request
   }
 
   function activatePairing(args) {
     const p = store.pairings.get(args.pairing);
     const cid = 'c_' + b64u(randomBytes(6)).replace(/[-_]/g, 'x');
-    const ver = { suite: p.suite, publicKey: importPub(p.suite, p.pub) };
+    let ver;
+    if (p.suite === 'hmac-sha256') { // seal a fresh secret to the client's X25519 key, bound to this pairing's SAS inputs
+      const secret = randomBytes(32);
+      ver = { suite: p.suite, secret };
+      p.sealed = seal({ pub: p.pub, secret, commit: p.commit, serverNonce: p.serverNonce, pairing: args.pairing, client: cid, aid });
+    } else ver = { suite: p.suite, publicKey: importPub(p.suite, p.pub) };
     // presence keys recorded exactly as committed in the pairing request (and bound into the pair decision)
     const presence = (p.presence ?? []).filter((k) => k.suite !== 'webauthn') // toy: no webauthn verifier
       .map((k) => ({ kid: k.kid, suite: k.suite, ver: { suite: k.suite, publicKey: importPub(k.suite, k.pub) } }));

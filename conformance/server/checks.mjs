@@ -434,6 +434,27 @@ export const CHECKS = [
       assert.equal(h.body.principal, `client:${st.client}`);
       assert.equal(h.body.ceiling, 'decide', 'every client after the first starts at decide');
     } },
+  { id: 'pairing-hmac-seal', profile: 'pairing', title: 'an hmac pairing delivers its secret sealed to the client X25519 key, until the first signed request; it opens to a working decide-capped credential',
+    async run(ctx) {
+      if (!ctx.P.clientLocal) throw new Skip('adapter has no clientLocal');
+      const w = await import('../lib/wire.mjs');
+      const r = await pairUpTo(ctx, { suite: 'hmac-sha256' });
+      assert.equal((await ctx.as('clientLocal').answer(r.reveal.decision, 'approve')).status, 200);
+      const st = await waitPaired(ctx, r.start.pairing);
+      assert.ok(st.sealed, 'status carries sealed once paired');
+      assert.equal(st.sealed.alg, 'x25519-hkdf-sha256-hmac/1');
+      const bind = { commit: r.commit, serverNonce: r.start.serverNonce, pairing: r.start.pairing, client: st.client, aid: ctx.aid };
+      assert.throws(() => w.openSeal({ privateKey: r.key.privateKey, sealed: { ...st.sealed, tag: st.sealed.tag.slice(0, -4) + 'AAAA' }, ...bind }), /bad tag/, 'tag checked');
+      assert.throws(() => w.openSeal({ privateKey: r.key.privateKey, sealed: st.sealed, ...bind, pairing: 'pr_other' }), /bad tag/, 'bound to this pairing');
+      const secret = w.openSeal({ privateKey: r.key.privateKey, sealed: st.sealed, ...bind });
+      assert.equal(secret.length, 32);
+      const again = await fetch(ctx.url + `/hitch/v1/clients/pairings/${r.start.pairing}`).then((x) => x.json());
+      assert.ok(again.sealed, 'still delivered before the first signed request');
+      const h = await connect(ctx.url, ctx.aid, { cid: st.client, key: { suite: 'hmac-sha256', secret } }).hello();
+      assert.equal(h.status, 200, JSON.stringify(h.body)); assert.equal(h.body.ceiling, 'decide');
+      const after = await fetch(ctx.url + `/hitch/v1/clients/pairings/${r.start.pairing}`).then((x) => x.json());
+      assert.equal(after.sealed, undefined, 'no longer delivered once the client has used it');
+    } },
   { id: 'pairing-presence', profile: 'pairing', title: 'presence keys sent at pairing are shown, recorded, and reach confirm once a local answer raises the ceiling',
     async run(ctx) {
       if (!ctx.P.clientLocal) throw new Skip('adapter has no clientLocal');
@@ -626,14 +647,14 @@ async function waitPaired(ctx, pairing) {
   return st;
 }
 
-async function pairUpTo(ctx, { reveal = true, presence } = {}) {
-  const { genKey, hashOf, b64u } = await import('../lib/wire.mjs');
+async function pairUpTo(ctx, { reveal = true, presence, suite = 'ed25519' } = {}) {
+  const { genKey, genX25519, hashOf, b64u } = await import('../lib/wire.mjs');
   const { sasOf } = await import('./sas.mjs');
-  const key = genKey('ed25519');
+  const key = suite === 'hmac-sha256' ? genX25519() : genKey(suite);
   const nonce = b64u((await import('node:crypto')).randomBytes(16));
   const commit = hashOf({ pub: key.pub, nonce });
   const s = await fetch(ctx.url + '/hitch/v1/clients/pairings', { method: 'POST', headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ name: 'hitch-check', suite: 'ed25519', pub: key.pub, commit, ...(presence ? { presence } : {}) }) });
+    body: JSON.stringify({ name: 'hitch-check', suite, pub: key.pub, commit, ...(presence ? { presence } : {}) }) });
   assert.equal(s.status, 202);
   const start = await s.json();
   if (!reveal) return { start, key };
