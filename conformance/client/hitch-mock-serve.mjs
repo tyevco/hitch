@@ -25,6 +25,8 @@ const OPS = {
   forgeTitle: (m, a) => { m.forgeTitle(a.id, a.title); return true; },
   resign: (m, a) => { m.resign(a.id); return true; },
   putContent: (m, a) => m.putContent(a.text, a.type, a.privacy),
+  setTier: (m, a) => { const d = m.node.store.decisions.get(a.id).d; d.options.find((o) => o.verb === a.verb).tier = a.tier; return true; },
+  seq: (m) => m.node.store.seq,
   setFeed: (m, a) => m.setFeed(a.name, a.data),
   clearLog: (m) => { m.clearLog(); return true; },
   state: (m, a) => { const r = m.node.store.decisions.get(a.id); return r ? { state: r.d.state, outcome: r.d.outcome ?? null, rev: r.d.rev } : null; },

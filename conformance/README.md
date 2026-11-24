@@ -56,7 +56,7 @@ The toy node's adapter, [`example/toy-adapter.mjs`](example/toy-adapter.mjs), is
 | pairing | pairing-sas, pairing-impostor, pairing-commit, agent-bootstrap, pairing-approve, pairing-presence, revoke-self, revoke-other, revoke-all (always runs last: it revokes the adapter's clients) |
 | feeds | feed-read, feed-changed, feed-guards |
 
-Not yet covered: messaging, tasks, push, relay, federation, privacy classes on events, the attention ladder, and the OS-dialog bootstrap (it needs a human). The Python stdlib variant for pairview is not built.
+Not yet covered: messaging, tasks, push, relay, federation, privacy classes on events, the attention ladder, and the OS-dialog bootstrap (it needs a human). 
 
 ## Client suite: writing an adapter
 
@@ -82,6 +82,23 @@ export default async function ({ url, aid, nodeKey, credentials }) {
 Example: [`example/naive-client.mjs`](example/naive-client.mjs). Use `--ceiling confirm --presence` to run with a confirm-ceiling client.
 
 `hitch-mock` is also importable for a client's own tests (`hitch/mock`): `request()`, `edit()`, `withdraw()`, `resolveElsewhere()`, `answerFromOtherDevice()`, `runExecutor()`, `forgeTitle()`, `resign()`, `putContent()`, `requests(method, regex)`.
+
+## Python stdlib client kit (pairview)
+
+`conformance/python/` (Python 3.9+, stdlib only; needs `node` on PATH for the mock):
+
+| File | What |
+|---|---|
+| `hitch_wire.py` | JCS (byte-identical to the JS kit, cross-checked in the tests), hashes, hmac-sha256 request signing, `shown_hash`, `build_answer` |
+| `hitch_client_check.py` | the 12 client checks, driving `hitch-mock` through `client/hitch-mock-serve.mjs` (a loopback JSON control API) |
+| `naive_client.py` | an example adapter (`make_client(env)`) and the self-test subject |
+
+```sh
+python3 conformance/python/hitch_client_check.py --client my_adapter.py   # hmac-sha256, ceiling decide
+python3 -m unittest discover -s conformance/python                        # the kit's own tests
+```
+
+The adapter is the JS one in Python form; `env.credentials.secret` is the hmac secret as bytes. A stdlib client sets `verifies_signatures = False`: there is no Ed25519 in the stdlib, so `verifies-signature` is skipped (SPEC allows an hmac client to relay without verifying, and caps it at decide).
 
 ## Library
 
