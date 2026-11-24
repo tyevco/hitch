@@ -2,6 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://hitch.dev/types/hitch.person.policy.set.schema.json",
   "title": "person op policy.set: the agent policy",
+  "description": "The agent policy: inbound hub exposure, meaning which teammates' agents (by team or login) may reach which of the person's projects, and whether they may hand off work. NORMATIVE: it grants no decision, no always-allow, and nothing that sends from this machine. Work arriving through it is still subject to every decision. The node refuses anything beyond this closed shape. Tier local, with presence.",
   "type": "object",
   "required": [
     "entries"
