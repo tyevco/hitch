@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://hitch.dev/types/kernel.hub.deliver@1.schema.json",
   "title": "kernel.hub.deliver@1 (decision kind, floor local, safety none): bound args",
-  "description": "A message held at the team hub boundary (inventory K13, H5, P4): deliver it to the agent, discard it, or block its sender. The body is shown by ref, so what is delivered is what was read. Preview rows: From, To, What, Body. Options: deliver (local), discard (narrow), block (narrow).",
+  "description": "A message held at the team hub boundary (inventory K13, H5, P4): deliver it to the agent, discard it, or block its sender. The body is shown by ref, so what is delivered is what was read. Preview rows: From, To, What, Body. Options: approve 'Deliver' (local), approveAllow 'Deliver and allow' (local), block (narrow), decline 'Discard' (narrow).",
   "type": "object",
   "required": [
     "held",
@@ -49,6 +49,9 @@
     },
     "body": {
       "$ref": "hitch.defs.schema.json#/$defs/ref"
+    },
+    "v2": {
+      "$ref": "hitch.defs.schema.json#/$defs/v2bridge"
     }
   },
   "additionalProperties": false

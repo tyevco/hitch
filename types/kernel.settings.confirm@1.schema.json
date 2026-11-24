@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hitch.dev/types/kernel.settings.confirm@1.schema.json",
+  "title": "kernel.settings.confirm@1 (decision kind, floor local, safety grant): bound args",
+  "description": "Apply settings a session sent that the service did not write without the person (inventory K11, H6, H7, W3). During the overlap the args are the v2 Inbox item as it was shown (its text by ref) and the v2 action each option runs; the bind re-checks the live item at claim. Preview rows, in order: Who, Project, Effect, Note, Details {digest, ref, bytes}. Options: approve 'Apply' (local), decline 'Keep mine' (narrow).",
+  "type": "object",
+  "required": [
+    "title",
+    "text"
+  ],
+  "properties": {
+    "title": {
+      "type": "string",
+      "maxLength": 300
+    },
+    "text": {
+      "$ref": "hitch.defs.schema.json#/$defs/ref"
+    },
+    "who": {
+      "type": "string",
+      "maxLength": 200
+    },
+    "project": {
+      "type": "string",
+      "maxLength": 200
+    },
+    "v2": {
+      "$ref": "hitch.defs.schema.json#/$defs/v2bridge"
+    }
+  },
+  "additionalProperties": false
+}

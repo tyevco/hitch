@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hitch.dev/types/kernel.mod.admit@1.schema.json",
+  "title": "kernel.mod.admit@1 (decision kind, floor local, safety grant): bound args",
+  "description": "Let a mod that is not built in use the background service (inventory K8). During the overlap the args are the v2 Inbox item as it was shown (its text by ref) and the v2 action each option runs; the bind re-checks the live item at claim. Preview rows, in order: Who, Project, Effect, Note, Details. Options: approve 'Let it in' (local), decline 'Refuse' (narrow).",
+  "type": "object",
+  "required": [
+    "title",
+    "text"
+  ],
+  "properties": {
+    "title": {
+      "type": "string",
+      "maxLength": 300
+    },
+    "text": {
+      "$ref": "hitch.defs.schema.json#/$defs/ref"
+    },
+    "who": {
+      "type": "string",
+      "maxLength": 200
+    },
+    "project": {
+      "type": "string",
+      "maxLength": 200
+    },
+    "v2": {
+      "$ref": "hitch.defs.schema.json#/$defs/v2bridge"
+    }
+  },
+  "additionalProperties": false
+}

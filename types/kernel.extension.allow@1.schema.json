@@ -27,6 +27,9 @@
     },
     "previousHash": {
       "$ref": "hitch.defs.schema.json#/$defs/hash"
+    },
+    "v2": {
+      "$ref": "hitch.defs.schema.json#/$defs/v2bridge"
     }
   },
   "additionalProperties": false
