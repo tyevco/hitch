@@ -251,6 +251,15 @@
       "type": "string",
       "pattern": "^dec_",
       "description": "hitch.retry@1: the decision whose outcome is uncertain"
+    },
+    "reason": {
+      "enum": [
+        "session-ended",
+        "requester-gone",
+        "superseded",
+        "by-requester"
+      ],
+      "description": "Why a decision was withdrawn (outcome withdrawn only). session-ended: the asking session ended or was cleared, so a typed answer has nowhere to go. requester-gone: its mod was removed. superseded: a newer decision replaced it. by-requester: withdrawn on purpose."
     }
   }
 }
