@@ -41,6 +41,16 @@ test('every keyword in the pack is exercised: a report.send@1 with the v2 bridge
   assert.match(V.validate('report.send@1', { ...args, v2: { ...args.v2, actions: many } }).join('|'), /more than 8 properties/);
 });
 
+test('parley recipients are wire values, never display labels (the send ticket is matched on them)', () => {
+  const text = { content: 'sha256:' + 'c'.repeat(64), bytes: 3 };
+  assert.deepEqual(V.validate('parley.send@1', { to: 'alice/mbp:planner', text }), []);
+  assert.deepEqual(V.validate('parley.send@1', { to: 's-other', text }), []);
+  assert.notDeepEqual(V.validate('parley.send@1', { to: 'Alice on her laptop', text }), [], 'a display label is not an address');
+  assert.notDeepEqual(V.validate('parley.send@1', { to: 'alice/mbp:planner', machine: 'MacBook', text }), [], 'machine is gone: labels live in preview rows');
+  assert.deepEqual(V.validate('parley.room.post@1', { post: 'p1', room: '#team-a/standup', text }), []);
+  assert.notDeepEqual(V.validate('parley.room.post@1', { post: 'p1', room: 'Standup room', text }), []);
+});
+
 test('the validator rejects what it should', () => {
   const bad = (n, v, re) => assert.match(V.validate(n, v).join('|'), re);
   { const { summary, ...noSummary } = decision; bad('hitch.decision@1', noSummary, /missing "summary"/); }

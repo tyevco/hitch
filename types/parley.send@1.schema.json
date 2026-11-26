@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://hitch.dev/types/parley.send@1.schema.json",
   "title": "parley.send@1 (decision kind, floor decide, safety none): bound args",
-  "description": "An agent's message to another agent (inventory P1, P2). One that leaves this machine is requested with reachesOut: safety send at confirm, and no 'always allow' (the owner, open question 5). The text is bound by ref. Preview rows, in order: From, To, Machine, Message. Options: approve 'Send' (decide; confirm when it reaches out), approveAllow 'Send and always allow' (local, only on this machine), sendBack needsText (decide), decline 'Discard' (narrow).",
+  "description": "An agent's message to another agent (inventory P1, P2). One that leaves this machine is requested with reachesOut: safety send at confirm, and no 'always allow' (the owner, open question 5). The text is bound by ref. Preview rows, in order: From, To, Machine, Message (To and Machine are display labels; `to` holds the wire address). Options: approve 'Send' (decide; confirm when it reaches out), approveAllow 'Send and always allow' (local, only on this machine), sendBack needsText (decide), decline 'Discard' (narrow).",
   "type": "object",
   "required": [
     "to",
@@ -10,12 +10,17 @@
   ],
   "properties": {
     "to": {
-      "type": "string",
-      "maxLength": 200
-    },
-    "machine": {
-      "type": "string",
-      "maxLength": 200
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9._-]{1,64}/[A-Za-z0-9._-]{1,64}:[A-Za-z0-9._-]{1,64}$"
+        },
+        {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9._-]{1,64}$"
+        }
+      ],
+      "description": "The wire address the hub routes on, never a display label: `owner/machine:agent` for another machine, or a local project or agent name. The send ticket is matched on it. The node derives reachesOut from it (a wire address leaves; a local name stays only if it resolves now to one live session). Display labels go in the preview rows (To, Machine) only."
     },
     "from": {
       "type": "string",

@@ -6,7 +6,8 @@
   "type": "object",
   "required": [
     "post",
-    "text"
+    "text",
+    "room"
   ],
   "properties": {
     "post": {
@@ -15,7 +16,8 @@
     },
     "room": {
       "type": "string",
-      "maxLength": 200
+      "pattern": "^#[A-Za-z0-9._-]{1,64}/[A-Za-z0-9._-]{1,64}$",
+      "description": "The room's wire id (`#team/room`), never the item title. The send ticket is matched on it, and on the text ref's digest."
     },
     "text": {
       "$ref": "hitch.defs.schema.json#/$defs/ref"
