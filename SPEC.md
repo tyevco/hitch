@@ -17,7 +17,7 @@ Unchecked for trademark or package collisions; nothing was fetched.
 
 | Name | Why |
 |---|---|
-| **Hitch** ✅ chosen by Tyler (2026-11-24) | Short and good on a CLI (`hitch ls`). It sits in the hay and herd theme beside Haystack and Herdquarters. |
+| **Hitch** ✅ chosen by the owner (2026-11-24) | Short and good on a CLI (`hitch ls`). It sits in the hay and herd theme beside Haystack and Herdquarters. |
 | Patchbay | The draft's first pick: "connect many things to one backend", with no farm pun. |
 | Switchyard | Good "routing" image, but long, and it suggests the event-log design. |
 | Gatepost | Leads with decisions and gates, but undersells events and sessions. |
@@ -121,7 +121,7 @@ flowchart TD
 | `kernel.agents.grant@1` | kernel | expose, grant, extend, quarantine | local |
 | `watch.merge@1` / `watch.deploy@1` / `watch.prready@1` | watch | PR or run ref | confirm |
 | `outbox.send@1` | outbox | draft `ref`, recipient resolved by the node | confirm |
-| `parley.send@1` / `parley.room.post@1` | parley | **`reachesOut`** (it leaves this machine): floor confirm and **safety send**, so no grant, default or always-allow covers it (Tyler, 2026-11-24). **The node derives it** from the bound recipient and **fails closed**: a recipient is local only if it resolves *now* to a live session on this node (by session id, or by an agent name that exactly one live session answers to). Anything unresolved or ambiguous leaves, and so does any `machine:agent`, `/` or `aid:` form. A requester's flag can only raise it, never lower it. The executor re-resolves at claim: if a local recipient has gone, the action fails ("ask again") rather than routing through the hub. The node strips an `approveAllow` ("always allow") option from such a decision | decide; reachesOut: confirm, safety send |
+| `parley.send@1` / `parley.room.post@1` | parley | **`reachesOut`** (it leaves this machine): floor confirm and **safety send**, so no grant, default or always-allow covers it (the owner, 2026-11-24). **The node derives it** from the bound recipient and **fails closed**: a recipient is local only if it resolves *now* to a live session on this node (by session id, or by an agent name that exactly one live session answers to). Anything unresolved or ambiguous leaves, and so does any `machine:agent`, `/` or `aid:` form. A requester's flag can only raise it, never lower it. The executor re-resolves at claim: if a local recipient has gone, the action fails ("ask again") rather than routing through the hub. The node strips an `approveAllow` ("always allow") option from such a decision | decide; reachesOut: confirm, safety send |
 | `director.hire@1` | director | | confirm |
 | `playbook.entry@1` | playbook | keep / keepRepo / edit / discard, bound to the content hash | decide |
 | `forms.submit@1` / `report.send@1` | forms / report | a form to a teammate leaves the machine: `reachesOut`, as for parley | decide (reachesOut: confirm, safety send) / confirm |
@@ -141,7 +141,7 @@ flowchart TD
 { "id":"dec_01JD…", "kind":"outbox.send@1", "rev":7, "state":"open",
   "owner":"outbox", "requester":{"principal":"mod:outbox","session":"s-…","member":"…"},
   "title":"…", "summary":"…",          // mod-supplied: shown QUOTED, under the owner label
-  "effect":"Sends a Teams message to Dana Whitfield as you", // NODE-derived from kind + bound args
+  "effect":"Sends a Teams message to Alice as you", // NODE-derived from kind + bound args
   "preview":[{"label":"To","value":"…"},{"label":"Body","digest":"sha256:…","ref":"sha256:…"}],
   "bind":{"alg":"sha256/v1","hash":"…"}, "safety":"send",   // send|merge|deploy|signin|grant|none
   "audience":"person",                  // or {member:"m-lead"} for herdr escalations below the top
@@ -158,7 +158,7 @@ flowchart TD
 | 1. Request | A mod, kernel gate or **app principal** asks. The node checks the declared kind, computes the **bind hash itself** (for herdr-teams it accepts the requester's rule-42 hash as the bind, because the runner re-verifies it), derives `effect`, sets privacy from the schema, applies rate limits and an open-decision cap per requester, then signs and stores. | sendbind, drawn/shown/seen, rule 42 |
 | 2. Present | `hitch.changed@1`, then the client GETs the signed body. The client verifies the node signature **before rendering**. | Switchyard node signing |
 | 3. Change | Content edited: `rev`++ and a new bind. Answers against the old one get `stale`. | today's `sig` |
-| 4. Answer | `POST /hitch/v1/decisions/:id/answers` carries `{verb, rev, bindHash, shownHash, aid, iat, exp≤120s, nonce, presence?}`. `shownHash` is the hash of the exact title, effect and preview the client rendered, so a relay cannot relabel a decision. `aid` stops a replay to another of Tyler's nodes. | herdr-intent/v1 |
+| 4. Answer | `POST /hitch/v1/decisions/:id/answers` carries `{verb, rev, bindHash, shownHash, aid, iat, exp≤120s, nonce, presence?}`. `shownHash` is the hash of the exact title, effect and preview the client rendered, so a relay cannot relabel a decision. `aid` stops a replay to another of the owner's nodes. | herdr-intent/v1 |
 | 5. Checks, in order | person-client or grant → not revoked → verb offered → option tier ≤ client ceiling, after the transport clamp → kind allow-list or `remoteApprove` → presence proof for confirm and local → rev, bind and shown hash current → open (CAS) → nonce fresh, iat/exp. | `webAction` + `lan/tiers.mjs` gate, one funnel |
 | 6. Execute | `action.queued`. Args stay server-side. An **in-process executor** (or one holding a kernel-minted executor credential, **never a hello token**) claims with a lease and **re-checks the bind at claim** for every kind. Sends still get their ticket only in the claim answer. Queue answers re-check the visible pane against the bind **at keypress time**. | tickets.mjs, paneanswer.mjs |
 | 7. Resolve | Outcomes: `applied`, `failed`, `declined`, `sent-back`, `withdrawn`, `expired`, `resolved-elsewhere{by, where}`, `fallback` (questions only), `uncertain`. A failure never retries into a new outcome without a new decision. | Switchyard outcomes |
@@ -166,7 +166,7 @@ flowchart TD
 
 **Multiple clients.** All see the same record. The first valid answer wins by CAS on `rev`. The others get `already` plus the winner, and must show "answered on <device>". Later and snooze are **client-local**. The node keeps no `inboxDismissed`.
 
-**Answered in an authoritative vendor client.** Tyler approves on Herdquarters' Pending shelf, which writes teams.json. herdr-teams (as an app principal) resolves the decision as **`resolved-elsewhere{by:"human", where:"herdr"}`**. It is not shown as withdrawn, and a phone answer that loses the race gets `already`.
+**Answered in an authoritative vendor client.** The person approves on Herdquarters' Pending shelf, which writes teams.json. herdr-teams (as an app principal) resolves the decision as **`resolved-elsewhere{by:"human", where:"herdr"}`**. It is not shown as withdrawn, and a phone answer that loses the race gets `already`.
 
 **No client connected.** The decision stays open. The node runs the attention ladder (pure `notifier.plan`: quiet hours, high kinds, batching, away hold) and emits `attention.due@1`. Push sends **counts and kinds only**. The requesting agent sees only `pending` when it reads; nothing is typed into its chat.
 
@@ -199,7 +199,7 @@ flowchart TD
 
 ## Auth and trust
 
-**Threat model: the agent is the main adversary.** It runs as Tyler's OS user, has Bash, reads 0600 files, runs CLIs and reaches loopback and `daemon.sock`.
+**Threat model: the agent is the main adversary.** It runs as the person's OS user, has Bash, reads 0600 files, runs CLIs and reaches loopback and `daemon.sock`.
 
 **Principals**
 
@@ -229,7 +229,7 @@ flowchart TD
 | `hmac-sha256` | a per-client secret sealed over the SAS channel | **decide** | stdlib clients (pairview), bridges |
 | `p256` / `ed25519` | non-exportable: Secure Enclave, WebAuthn, keychain with an access-control prompt | confirm (remote), local (loopback) | phone, desktop, CLI with an Enclave key |
 
-**Presence (step-up):** required on **every confirm and local answer**. It is a signature by a user-presence-gated key over the canonical answer (shownHash included), valid 120 s and spent once. A **CLI gets it from a LocalAuthentication helper (Touch ID)** or Windows Hello, so Tyler can approve sends from a terminal and an agent running the CLI cannot. It replaces "Confirm it's you" without the GitHub round trip.
+**Presence (step-up):** required on **every confirm and local answer**. It is a signature by a user-presence-gated key over the canonical answer (shownHash included), valid 120 s and spent once. A **CLI gets it from a LocalAuthentication helper (Touch ID)** or Windows Hello, so the owner can approve sends from a terminal and an agent running the CLI cannot. It replaces "Confirm it's you" without the GitHub round trip.
 
 **Requests:** signed with headers `hitch-client`, `hitch-nonce`, `hitch-iat`, `hitch-sig` (exact string in [Wire details](#wire-details-normative)). Nonces come from the server (`/hitch/v1/nonce`) **or are client-issued and bounded by iat/exp ≤ 120 s**, so the hc-doc and hub store-and-forward paths work. Responses are signed by the node.
 
@@ -237,7 +237,7 @@ flowchart TD
 
 **Third-party clients:** start as above. Vendor decision kinds **default to local** (unreachable remotely) until a local decision assigns a tier. That answers how Herdquarters and pairview get floors without a spec release. Client-created decisions are rate-limited and always shown under their owner.
 
-**Revoke.** Direct commands, not decisions: the person acts. Body [`hitch.revoke.request`](types/hitch.revoke.request.schema.json) `{iat, exp, nonce, presence?}` on a signed request; `presence` signs JCS(body minus `presence`). **Revoking your own client is free** (it only loses power). **Revoking another client needs a confirm-ceiling client and presence**, so an agent holding a decide-tier request key cannot sign Tyler's phone out (`tier`, `step_up_required`). An already revoked client gives `gone`. The response is the updated `hitch.client@1`, and a `hitch.changed@1` for clients follows.
+**Revoke.** Direct commands, not decisions: the person acts. Body [`hitch.revoke.request`](types/hitch.revoke.request.schema.json) `{iat, exp, nonce, presence?}` on a signed request; `presence` signs JCS(body minus `presence`). **Revoking your own client is free** (it only loses power). **Revoking another client needs a confirm-ceiling client and presence**, so an agent holding a decide-tier request key cannot sign the owner's phone out (`tier`, `step_up_required`). An already revoked client gives `gone`. The response is the updated `hitch.client@1`, and a `hitch.changed@1` for clients follows.
 
 **Kill switch:** `hitch revoke --all` = `POST /hitch/v1/clients/revoke-all`, local tier with presence; it revokes every client, the caller too. Pairing attempts raise a `kernel.lan.access@1`-style tripwire decision.
 
@@ -392,7 +392,7 @@ Status carries `sealed` until the node sees the first valid signed request from 
 | **P1 (pre-R1)** | `/hitch/v1` lists, feeds, events (SSE and long-poll, per-client groups), ULID, time, stamped `from`, node signature | reads only; old `/v1/bus` shape is default | client suite passes on reads |
 | **P2 (pre-R1)** | Client pairing: OS-dialog bootstrap, presence keys, hmac and p256 suites, `clients` list and revoke; app principal | old auth runs in parallel; no tier above decide until presence works | pairing profile green; the agent-bootstrap attack fails |
 | **P3 (pre-R1)** | Durable decision store; every gate and inbox kind requests decisions; `POST …/answers` through `webAction`; `resolved-elsewhere`; grants (no safety kinds) | one funnel; `not_a_client` tested against every token | decisions profile green in CI |
-| **P4 (pre-R1)** | Reference client (`hitch-ref`: about 600 lines of SPA plus a CLI with a Touch ID helper); `front:"off"` setting | front stays on until the client pairs | client suite green; Tyler paired on each machine |
+| **P4 (pre-R1)** | Reference client (`hitch-ref`: about 600 lines of SPA plus a CLI with a Touch ID helper); `front:"off"` setting | front stays on until the client pairs | client suite green; the owner paired on each machine |
 | **P5 (R1)** | **Quiet front:** delete standups, sweeps, lock, nudges, dialogs, PromptHint. Loopback Dashboard **read-only** for one release | each removal gated on its decision kind existing | coverage check from manifests: every kind renders in the reference client and Herdquarters |
 | P6 (post-R1) | Headless executors: kernel kinds first, then wins, playbook, forms, tasks, director, parley and outbox last (they need connectors in the daemon) | stragglers show "waiting for executor"; bind re-checked at claim | no `claimer=1` callers |
 | P7 (post-R1) | Retire Dashboard, menu bar (410 gone), banners, LAN pages | pending decisions migrated into the store | no `/api/*` hits for a release (/health counters) |
@@ -414,9 +414,9 @@ Status carries `sealed` until the node sees the first valid signed request from 
 | Transport | LAN, relay, or SSH/hc-gate carrying envelopes; client-issued nonces | long-poll first; SSE optional |
 | Messages | `messages.external` capability: keeps its file mail, mirrors delivery states; person-authored `message` and `task` intents use `POST /messages` | `m<N>` maps to ULID + `idem` = origin_id |
 | Gains | one Needs-you list for Haystack kinds too; no 15-minute TTL; no live-session dependency; push without SSH | fixes P1 and P3 (per-client creds); typed stream instead of snapshot SSE |
-| Gaps | must render Haystack kinds and keep up with their versions; spend in dollars and the To-dos UI need a home | stdlib-only blocks confirm tier; Dale's call to adopt |
+| Gaps | must render Haystack kinds and keep up with their versions; spend in dollars and the To-dos UI need a home | stdlib-only blocks confirm tier; its maintainer's call to adopt |
 
-## Open decisions for Tyler
+## Open decisions for the owner
 
 | # | Decision | Recommendation |
 |---|---|---|
@@ -428,8 +428,8 @@ Status carries `sealed` until the node sees the first valid signed request from 
 | 6 | **Grants on safety kinds**: forbid outright | forbid |
 | 7 | **hmac suite capped at decide** (pairview cannot approve sends) | yes |
 | 8 | **Vendor kind floors**: default local until a local decision sets them | yes |
-| 9 | **Wins Friday report**: render `report.send@1` in the reference client before P5 | yes, or Sam's email stalls |
-| 10 | **Approach Dale** with the core+decisions profile only | after P3 is green |
+| 9 | **Wins Friday report**: render `report.send@1` in the reference client before P5 | yes, or the weekly report email stalls |
+| 10 | **Approach pairview's maintainer** with the core+decisions profile only | after P3 is green |
 
 ## Designs considered
 

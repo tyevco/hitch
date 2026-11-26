@@ -17,8 +17,8 @@ test('every schema file is named for its $id', () => {
 });
 
 const decision = { spec: 'hitch/1', id: 'dec_' + ulid, kind: 'outbox.send@1', rev: 7, state: 'open', owner: 'outbox',
-  requester: { principal: 'mod:outbox', session: 's-1' }, title: 'Reply to Dana', summary: '', effect: 'Sends a Teams message to Dana as you',
-  preview: [{ label: 'To', value: 'Dana' }, { label: 'Body', digest: H, ref: H, bytes: 812 }], bind: { alg: 'sha256/v1', hash: H }, safety: 'send',
+  requester: { principal: 'mod:outbox', session: 's-1' }, title: 'Reply to Alice', summary: '', effect: 'Sends a Teams message to Alice as you',
+  preview: [{ label: 'To', value: 'Alice' }, { label: 'Body', digest: H, ref: H, bytes: 812 }], bind: { alg: 'sha256/v1', hash: H }, safety: 'send',
   audience: 'person', options: [{ verb: 'approve', label: 'Send', tier: 'confirm', allowedForYou: false }, { verb: 'sendBack', tier: 'decide', needsText: true, maxText: 2000 }, { verb: 'decline', tier: 'narrow' }],
   remoteApprove: false, urgency: 'normal', expires: null, onExpire: 'withdraw', created: T, updated: T };
 
@@ -34,7 +34,7 @@ test('the SPEC examples validate', () => {
 
 test('every keyword in the pack is exercised: a report.send@1 with the v2 bridge validates, and maxProperties bites', () => {
   const H = 'sha256:' + 'b'.repeat(64);
-  const args = { week: '2026-11-16', to: ['sam@example.com'], subject: 'Weekly status', body: { content: H, bytes: 10 },
+  const args = { week: '2026-11-16', to: ['alice@example.com'], subject: 'Weekly status', body: { content: H, bytes: 10 },
     v2: { item: 'report:2026-11-16', actions: { approve: { mod: 'report', kind: 'send', args: { week: '2026-11-16' } } } } };
   assert.deepEqual(V.validate('report.send@1', args), []);
   const many = Object.fromEntries(Array.from({ length: 9 }, (_, i) => [`v${i}`, { mod: 'm', kind: 'k', args: {} }]));

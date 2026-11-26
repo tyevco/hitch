@@ -32,7 +32,7 @@ The adapter is **test-only code**. Keep it outside the shipped bundle (for examp
 
 | Hook | Must do | Must not do |
 |---|---|---|
-| `setup()` | start the daemon in-process on a free loopback port with a temp state dir; return `{url}` | reuse Tyler's real state dir or `daemon.sock` |
+| `setup()` | start the daemon in-process on a free loopback port with a temp state dir; return `{url}` | reuse the person's real state dir or `daemon.sock` |
 | `principals()` | mint credentials directly in the stores: a cx/1 hello token per mod, an app principal, two sessions `{sid, token}`, clients with real keys (`wire.genKey`) | mint through HTTP routes that real agents could call |
 | `requestDecision(d)` | call the same internal function a mod's gate calls, as `mod:<owner>`; on refusal throw `Object.assign(new Error(code), {code})` | write the decision store directly (that skips the floor, bind and safety checks under test) |
 | `advanceClock(ms)` | move **decision time** only (expiry, attention) | move the signature windows: `iat`/`exp` checks stay on the wall clock, or every signed request after the jump is refused |

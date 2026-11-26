@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://hitch.dev/types/parley.send@1.schema.json",
   "title": "parley.send@1 (decision kind, floor decide, safety none): bound args",
-  "description": "An agent's message to another agent (inventory P1, P2). One that leaves this machine is requested with reachesOut: safety send at confirm, and no 'always allow' (Tyler, open question 5). The text is bound by ref. Preview rows, in order: From, To, Machine, Message. Options: approve 'Send' (decide; confirm when it reaches out), approveAllow 'Send and always allow' (local, only on this machine), sendBack needsText (decide), decline 'Discard' (narrow).",
+  "description": "An agent's message to another agent (inventory P1, P2). One that leaves this machine is requested with reachesOut: safety send at confirm, and no 'always allow' (the owner, open question 5). The text is bound by ref. Preview rows, in order: From, To, Machine, Message. Options: approve 'Send' (decide; confirm when it reaches out), approveAllow 'Send and always allow' (local, only on this machine), sendBack needsText (decide), decline 'Discard' (narrow).",
   "type": "object",
   "required": [
     "to",

@@ -6,7 +6,7 @@ import { startMock } from './hitch-mock.mjs';
 
 const pause = (ms) => new Promise((r) => setTimeout(r, ms));
 const plain = { kind: 'wins.confirm@1', args: { win: 'w1', title: 'Shipped hitch-check' }, title: 'Log win: shipped hitch-check', summary: 'From the Friday sweep' };
-const sendKind = { kind: 'outbox.send@1', args: { channel: 'teams', to: 'Dana', body: { content: 'sha256:' + '0'.repeat(64), bytes: 0 }, send: { body: { content: 'sha256:' + '0'.repeat(64), bytes: 0 }, path: '/chats/19:x/messages' } }, title: 'Send reply to Dana', summary: 'Re: Q4 plan' };
+const sendKind = { kind: 'outbox.send@1', args: { channel: 'teams', to: 'Alice', body: { content: 'sha256:' + '0'.repeat(64), bytes: 0 }, send: { body: { content: 'sha256:' + '0'.repeat(64), bytes: 0 }, path: '/chats/19:x/messages' } }, title: 'Send reply to Alice', summary: 'Re: Q4 plan' };
 
 export const CLIENT_CHECKS = [
   { id: 'generic-unknown-kind', title: 'an unknown vendor kind renders generically: title, effect, preview and options all visible',
@@ -110,7 +110,7 @@ export const CLIENT_CHECKS = [
   { id: 'withheld', title: 'a withheld preview row shows as withheld and its content is never fetched',
     async run({ mock, client }) {
       const c = mock.putContent('TOP SECRET BODY', 'text/plain', 'secret');
-      const id = mock.request({ ...plain, preview: [{ label: 'To', value: 'dana@example.com' }, { label: 'Body', withheld: true, digest: c.hash, bytes: c.bytes }] });
+      const id = mock.request({ ...plain, preview: [{ label: 'To', value: 'alice@example.com' }, { label: 'Body', withheld: true, digest: c.hash, bytes: c.bytes }] });
       await client.sync();
       const v = await client.view(id);
       assert.ok(v.text.includes('Body'), 'the row label is shown');

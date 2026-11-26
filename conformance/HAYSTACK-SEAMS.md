@@ -34,7 +34,7 @@ flowchart LR
 | `kid` | **`node:<aid>:<fp>`**, where `fp` = the first 8 hex chars of sha256(raw `x`). A rotation then changes `kid` while `aid` stays the same. In SPEC, the schemas and the kit since this commit (checked by `discovery` and `envelopes`) |
 | Private key | PKCS#8 DER, base64, in the OS store: service `claude-extended-hitch`, account `node-key-<fp>`. On macOS it goes **through the signed helper** (`helperStore`, `platform.mjs:549`). That gives a helper-only ACL (`SecAccessCreate([self])`), the planted-item refusal (`secretPins`, `:499`) and the CDHash pin (`codesignLook` `:417`, `helperPin` `:428`). Linux uses `secret-tool`; Windows uses Credential Manager (the key is far below the 800-char chunk limit) |
 | Public part | `state.hitch.nodeKeys = [{kid, x, created, state: active\|retiring\|retired, rotation?}]` in a new `hitch` state namespace (`kernel/state.mjs:20`). It holds public data only |
-| In memory | Loaded once at start into a non-exported `KeyObject` and kept for the process's life. Every event is signed, so a helper round trip per signature is not an option. This is the same accepted limit as the hub key: a process running as Tyler's user can read daemon memory |
+| In memory | Loaded once at start into a non-exported `KeyObject` and kept for the process's life. Every event is signed, so a helper round trip per signature is not an option. This is the same accepted limit as the hub key: a process running as the person's user can read daemon memory |
 | No usable store | **Hitch stays off** and `/.well-known/hitch` returns `503 {code:"gone", message:"no secret store"}`. Never fall back to an in-memory key, the way the schedule key does (`kernel/services/schedule.mjs:69-89`): clients pin the key, so a key that changes at every restart would break every pairing |
 | Tests | Reuse the existing `SECRETS_FILE` JSON store knob (`platform.mjs:306`); no new knob. The adapter sets it in `setup()` |
 
@@ -44,7 +44,7 @@ flowchart LR
 3. A client holding a pinned old key checks the statement against that key and re-pins. While `retiring` (30 days), the node also accepts **sockhello** under the old key. From the first rotation on, every event is signed with the new key.
 4. **A suspected compromise is not a rotation.** A statement from a stolen key proves nothing. That path is revoke-all, a fresh key, and every client paired again.
 
-**Failure modes.** A locked keychain at start means Hitch is off and the status says why; it retries on unlock, like `{locked:true}` today (`link.mjs:664`). A missing key while `state.hitch.nodeKeys` has an active entry is treated as tampering: no new key is made silently, and Tyler is told to re-pair.
+**Failure modes.** A locked keychain at start means Hitch is off and the status says why; it retries on unlock, like `{locked:true}` today (`link.mjs:664`). A missing key while `state.hitch.nodeKeys` has an active entry is treated as tampering: no new key is made silently, and the owner is told to re-pair.
 
 ## Seam 3: the durable decision store
 
@@ -106,7 +106,7 @@ flowchart LR
 |---|---|
 | `cid` | `c_` + 10 base32 characters, random. **Hard to undo:** clients store it |
 | `suite`, `pub` | Ed25519 `x`, or P-256 `{x, y}` |
-| hmac secret | **never in the state file** (it is readable by any process running as Tyler); stored in the OS store under `claude-extended-hitch` / `client-<cid>` |
+| hmac secret | **never in the state file** (it is readable by any process running as the person's user); stored in the OS store under `claude-extended-hitch` / `client-<cid>` |
 | `presence[]` | `{kid, suite, pub, origins?, rpId?, signCount}`, fixed at pairing as bound in the pair decision |
 | `ceiling`, `privacy`, `scopes` | First client: local and text. Later clients: decide and meta (SPEC Starting ceilings) |
 | `principalKind` | `client` or `app`. An app (herdr-app, the herdr runner, the pairview daemon) uses the same record with scopes `publish+request+execute:<owner>` and **no ceiling**, so it can never answer |
@@ -131,7 +131,7 @@ flowchart LR
 | `action.done` | the executor reports | `ok`, a `result` digest, `late` (true when the lease had lapsed) |
 | `action.lease-expired` | the tick finds a lapsed lease | after `invoked`: the outcome is `uncertain` and `hitch.retry@1` is raised; before `invoked`: the action returns to `queued` |
 
-- **Never re-run a side effect automatically** (lead decision). When a lease ends after `action.invoked` with no `action.done`, the decision resolves **`uncertain`** and the node raises a **`hitch.retry@1`** decision. It shows the evidence (when the action was invoked, when the lease ended, runs so far), offers `retry` at the tier first chosen with the original's safety, and offers "Leave it". A lapsed lease is never handed to another claimer. A `done` that arrives after the lease is recorded as `action.done {late: true}` against the `uncertain` decision, for Tyler to see; it does not change the outcome. Checked by `uncertain-never-reruns` and `uncertain-leave-it`.
+- **Never re-run a side effect automatically** (lead decision). When a lease ends after `action.invoked` with no `action.done`, the decision resolves **`uncertain`** and the node raises a **`hitch.retry@1`** decision. It shows the evidence (when the action was invoked, when the lease ended, runs so far), offers `retry` at the tier first chosen with the original's safety, and offers "Leave it". A lapsed lease is never handed to another claimer. A `done` that arrives after the lease is recorded as `action.done {late: true}` against the `uncertain` decision, for the owner to see; it does not change the outcome. Checked by `uncertain-never-reruns` and `uncertain-leave-it`.
 - **No retry into a new outcome.** A `failed` outcome stays failed; running it again takes a new decision (SPEC Decisions, step 7).
 - `action.invoked` is written and fsynced **before** the side effect. A crash between the two then shows as invoked-without-done, which is the case a person must look at, never a silent re-run.
 
@@ -228,7 +228,7 @@ In Hitch, a typed slash command in a session is **not** an answer. It points at 
 | A5 | **Bearer pairings** still accepted as `x-cx-user` (`registry.mjs:650`); capturable by a socket relay | **Decided:** new bearer pair asks are refused from P3; never accepted on `/hitch/v1`; keyed mod pairings are frozen at P7 |
 | A6 | **Jira writes** bypass the kernel (O3), and `connector-jira` `gateWrite` allows everything (`driver.mjs:84`) | **Hot-fixed early on v2 (2026-11-24).** P3 still owns `outbox.send@1` through the kernel connector, with a real `gateWrite` |
 | A7 | **Parley trusted pairs** send with no click under "always allow" | **Decided:** a send that reaches out is a safety `send` at confirm (catalogue `reachesOut`), so always-allow covers only sessions on this machine. Checked by `reaches-out-is-a-send` |
-| A8 | **Wins** are logged without the person's confirmation (`wins/hooks/register.tsx:930`, off by default) | **Accepted limit (Tyler, 2026-11-24):** wins need no confirmation by default. Agents log them as today; review and discard are optional in a client (`wins.confirm@1`) |
+| A8 | **Wins** are logged without the person's confirmation (`wins/hooks/register.tsx:930`, off by default) | **Accepted limit (the owner, 2026-11-24):** wins need no confirmation by default. Agents log them as today; review and discard are optional in a client (`wins.confirm@1`) |
 | A9 | **Paired sessions sign from timers** (`outbox:471` refresh, `updates:309` reload) | paired signatures are gone; background work runs as daemon executors |
 
 ### Kinds this adds to the catalogue
